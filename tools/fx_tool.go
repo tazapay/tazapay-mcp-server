@@ -2,10 +2,11 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"io"
+	"github.com/spf13/viper"
 	"net/http"
 	"os"
 )
@@ -23,7 +24,7 @@ func AddFXTool(s *server.MCPServer) {
 		),
 		mcp.WithNumber("amount",
 			mcp.Required(),
-			mcp.Description("Amount to convert"),
+			mcp.Description("Amount to convert. It should be a number and should not have any decimal places."),
 		),
 	)
 	s.AddTool(tool, handleFXTool)
@@ -37,35 +38,22 @@ func handleFXTool(
 	arguments := request.Params.Arguments
 	from, ok1 := arguments["from"].(string)
 	to, ok2 := arguments["to"].(string)
-	amount, ok3 := arguments["amount"].(float64)
+	amount, ok3 := arguments["amount"].(int)
 
 	if !ok1 || !ok2 || !ok3 {
 		return nil, fmt.Errorf("invalid arguments")
 	}
 
-	// Perform the currency conversion (dummy implementation)
-	convertedAmount := amount * 1.2 // Replace with actual conversion logic
+	return Fxcall(from, to, amount)
 
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
-				Text: fmt.Sprintf("Converted %f %s to %f %s.", amount, from, convertedAmount, to),
-			},
-		},
-	}, nil
 }
 
-func fxcall() {
+func Fxcall(from string, to string, amount int) (*mcp.CallToolResult, error) {
 	// API endpoint and parameters
 	baseURL := "https://service.tazapay.com/v3/fx/payout"
-	initialCurrency := "USD"
-	finalCurrency := "INR"
-	amount := "100"
 
 	// Construct the full URL with query parameters
-	url := fmt.Sprintf("%s?initial_currency=%s&final_currency=%s&amount=%s",
-		baseURL, initialCurrency, finalCurrency, amount)
+	url := fmt.Sprintf("%s?initial_currency=%s&final_currency=%s&amount=%d", baseURL, from, to, amount)
 
 	// Create a new request
 	req, err := http.NewRequest("GET", url, nil)
@@ -77,8 +65,7 @@ func fxcall() {
 	// Set headers
 	req.Header.Set("Accept", "application/json")
 
-	// Replace YOUR_AUTH_TOKEN with your actual authorization token
-	authToken := "YOUR_AUTH_TOKEN"
+	authToken := "Basic " + viper.GetString("TAZAPAY_AUTH_TOKEN")
 	req.Header.Set("Authorization", authToken)
 
 	// Create HTTP client and send request
@@ -90,13 +77,27 @@ func fxcall() {
 	}
 	defer resp.Body.Close()
 
-	// Read and print response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("Error reading response body: %v\n", err)
-		os.Exit(1)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("received non-success status code: %d", resp.StatusCode)
 	}
 
-	fmt.Printf("Status Code: %d\n", resp.StatusCode)
-	fmt.Printf("Response Body: %s\n", string(body))
+	var result map[string]interface{} // or define your own struct
+
+	// Read and decode JSON directly
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		fmt.Printf("Error getting fx rate : %v\n", err)
+	}
+	var data = result["data"].(map[string]interface{})
+	// Extract the exchange rate and converted amount
+	exchangeRate := data["exchange_rate"].(float64)
+	convertedAmount := data["converted_amount"].(float64)
+	
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			mcp.TextContent{
+				Type: "text",
+				Text: fmt.Sprintf("FX rate from %v to %v is %f and converted amount is %v.", from, to, exchangeRate, convertedAmount),
+			},
+		},
+	}, nil
 }
