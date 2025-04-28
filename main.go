@@ -57,7 +57,7 @@ func main() {
 	}
 
 	// Uncomment the following lines to test the Fxcall function
-	//res, err := tools.Fxcall("USD", "INR", 1000)
+	//res, err := tools.Fxcall("SGD", "CAD", 1000)
 	//if err != nil {
 	//	fmt.Printf("Error: %v\n", err)
 	//	return

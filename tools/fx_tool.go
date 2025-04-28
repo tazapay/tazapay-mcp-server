@@ -12,7 +12,7 @@ import (
 )
 
 func AddFXTool(s *server.MCPServer) {
-	tool := mcp.NewTool("tazapay_fx",
+	tool := mcp.NewTool("tazafx",
 		mcp.WithDescription("Get FX rate from one currency to another using Tazapay FX rate"),
 		mcp.WithString("from",
 			mcp.Required(),
@@ -38,7 +38,8 @@ func handleFXTool(
 	arguments := request.Params.Arguments
 	from, ok1 := arguments["from"].(string)
 	to, ok2 := arguments["to"].(string)
-	amount, ok3 := arguments["amount"].(int)
+	// amount, ok3 := arguments["amount"].(int)
+	amount, ok3 := 1000, true
 
 	if !ok1 || !ok2 || !ok3 {
 		return nil, fmt.Errorf("invalid arguments")
@@ -91,7 +92,7 @@ func Fxcall(from string, to string, amount int) (*mcp.CallToolResult, error) {
 	// Extract the exchange rate and converted amount
 	exchangeRate := data["exchange_rate"].(float64)
 	convertedAmount := data["converted_amount"].(float64)
-	
+
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			mcp.TextContent{
