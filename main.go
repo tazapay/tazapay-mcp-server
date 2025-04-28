@@ -10,12 +10,13 @@ import (
 func main() {
 	// Create MCP server
 	s := server.NewMCPServer(
-		"taza",
+		"tazapay",
 		"1.0.0",
 	)
 	//Add tools to the server
-	tools.AddHelloTool(s)
+	//tools.AddHelloTool(s)
 	tools.AddAddTool(s)
+	tools.AddFXTool(s)
 
 	// Start the stdio server
 	if err := server.ServeStdio(s); err != nil {
