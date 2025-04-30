@@ -3,65 +3,60 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
+
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/viper"
+
+	"github.com/tazapay/tazapay-mcp-server/api"
+	"github.com/tazapay/tazapay-mcp-server/logs"
 	"github.com/tazapay/tazapay-mcp-server/tools"
-	"os"
 )
 
 func initConfig() {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Printf("Error getting home directory: %v\n", err)
-		return
-	}
-	// Set up Viper
-	viper.AddConfigPath(home)                  // Path to look for the config file
-	viper.SetConfigName(".tazapay-mcp-server") // Name of the config file (without extension)
-	viper.SetConfigType("yaml")                // Config file type
-	// Path to look for the config file in the current directory
+	viper.SetConfigName(".tazapay-mcp-server")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("$HOME")
+	viper.AddConfigPath(".")
 
-	// Read the config file
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("Error reading config file: %v\n", err)
-		return
+		os.Exit(1)
 	}
 
-	// Retrieve the keys
-	accessKey := viper.GetString("TAZAPAY_API_KEY")
-	secretKey := viper.GetString("TAZAPAY_API_SECRET")
+	// Read API keys from config
+	apiKey := viper.GetString("api_key")
+	apiSecret := viper.GetString("api_secret")
 
-	// Combine accessKey and secretKey with a colon
-	authString := fmt.Sprintf("%s:%s", accessKey, secretKey)
-
-	// Encode the string to Base64
-	authToken := base64.StdEncoding.EncodeToString([]byte(authString))
-	viper.Set("TAZAPAY_AUTH_TOKEN", authToken)
+	// Generate Base64 encoded auth token
+	authToken := base64.StdEncoding.EncodeToString([]byte(apiKey + ":" + apiSecret))
+	os.Setenv("TZP_AUTH_TOKEN", authToken)
 }
 
 func main() {
+	// Initialize configuration
 	initConfig()
-	// Create MCP server
-	s := server.NewMCPServer(
-		"tazapay",
-		"0.0.1",
-	)
-	//Add tools to the server
-	//tools.AddHelloTool(s)
-	tools.AddAddTool(s)
+
+	// Create new MCP server
+	s := server.NewMCPServer("tazapay", "0.0.1")
+
+	// Add API tools
+	api.AddBalanceTool(s)
+	api.AddBeneficiaryTool(s)
+	api.AddPayoutTool(s)
+
+	// Add log analysis tool
+	logs.AddLogAnalysisTool(s)
+
+	// Add FX tool
 	tools.AddFXTool(s)
 
-	// Start the stdio server
+	// Add add tool
+	tools.AddAddTool(s)
+
+	// Start server using stdio transport
 	if err := server.ServeStdio(s); err != nil {
-		fmt.Printf("Server error: %v\n", err)
+		fmt.Printf("Error starting server: %v\n", err)
+		os.Exit(1)
 	}
-
-	// Uncomment the following lines to test the Fxcall function
-	//res, err := tools.Fxcall("SGD", "CAD", 1000)
-	//if err != nil {
-	//	fmt.Printf("Error: %v\n", err)
-	//	return
-	//}
-	//fmt.Printf("Result: %v\n", res)
-
 }
