@@ -58,17 +58,13 @@ func (c *ChatInterface) Run() {
 }
 
 func (c *ChatInterface) handleCheckBalance() {
-	fmt.Print("Enter currency (e.g., USD): ")
-	currency, _ := c.reader.ReadString('\n')
-	currency = strings.TrimSpace(currency)
-
-	balance, err := c.client.GetBalance(currency)
+	balance, err := c.client.GetBalance()
 	if err != nil {
 		fmt.Printf("Error checking balance: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Your %s balance is %.2f\n", currency, balance)
+	fmt.Printf("Your balance is %.2f %s\n", balance.Data.Balance, balance.Data.Currency)
 }
 
 func (c *ChatInterface) handleCreateBeneficiary() {
@@ -84,13 +80,18 @@ func (c *ChatInterface) handleCreateBeneficiary() {
 	country, _ := c.reader.ReadString('\n')
 	country = strings.TrimSpace(country)
 
-	beneficiaryID, err := c.client.CreateBeneficiary(name, email, country)
+	beneficiary := &tazapay.Beneficiary{
+		Name:    name,
+		Email:   email,
+		Country: country,
+	}
+	response, err := c.client.CreateBeneficiary(beneficiary)
 	if err != nil {
 		fmt.Printf("Error creating beneficiary: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Beneficiary created successfully! ID: %s\n", beneficiaryID)
+	fmt.Printf("Beneficiary created successfully! ID: %s\n", response.Data.ID)
 }
 
 func (c *ChatInterface) handleCreatePayout() {
@@ -106,13 +107,18 @@ func (c *ChatInterface) handleCreatePayout() {
 	currency, _ := c.reader.ReadString('\n')
 	currency = strings.TrimSpace(currency)
 
-	payoutID, err := c.client.CreatePayout(beneficiaryID, amount, currency)
+	payout := &tazapay.Payout{
+		BeneficiaryID: beneficiaryID,
+		Amount:        amount,
+		Currency:      currency,
+	}
+	response, err := c.client.CreatePayout(payout)
 	if err != nil {
 		fmt.Printf("Error creating payout: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Payout created successfully! ID: %s\n", payoutID)
+	fmt.Printf("Payout created successfully! ID: %s\n", response.Data.ID)
 }
 
 func (c *ChatInterface) handleGetFXRates() {
@@ -124,11 +130,11 @@ func (c *ChatInterface) handleGetFXRates() {
 	to, _ := c.reader.ReadString('\n')
 	to = strings.TrimSpace(to)
 
-	rate, err := c.client.GetFXRates(from, to)
+	rate, err := c.client.GetExchangeRate(from, to)
 	if err != nil {
-		fmt.Printf("Error getting FX rates: %v\n", err)
+		fmt.Printf("Error getting exchange rate: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Exchange rate from %s to %s: %.4f\n", from, to, rate)
+	fmt.Printf("Exchange rate from %s to %s: %.4f\n", from, to, rate.Data.Rate)
 }
