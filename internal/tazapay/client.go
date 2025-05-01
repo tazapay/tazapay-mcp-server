@@ -124,13 +124,26 @@ type ExchangeRateResponse struct {
 
 // PaymentRequest represents a payment creation request
 type PaymentRequest struct {
-	Amount        float64 `json:"amount"`
-	Currency      string  `json:"currency"`
-	Description   string  `json:"description"`
-	SuccessURL    string  `json:"success_url"`
-	CancelURL     string  `json:"cancel_url"`
-	CustomerEmail string  `json:"customer_email"`
-	CustomerName  string  `json:"customer_name"`
+	Amount          float64 `json:"amount"`
+	Currency        string  `json:"currency"`
+	InvoiceCurrency string  `json:"invoice_currency"`
+	Description     string  `json:"description"`
+	TransactionDesc string  `json:"transaction_description"`
+	SuccessURL      string  `json:"success_url"`
+	CancelURL       string  `json:"cancel_url"`
+	CustomerEmail   string  `json:"customer_email"`
+	CustomerName    string  `json:"customer_name"`
+	CustomerDetails struct {
+		Email string `json:"email"`
+		Name  string `json:"name"`
+		Phone struct {
+			Number      string `json:"number"`
+			CallingCode string `json:"calling_code"`
+		} `json:"phone"`
+		Address string `json:"address"`
+		Country string `json:"country"`
+	} `json:"customer_details"`
+	PaymentMethods []string `json:"payment_methods,omitempty"`
 }
 
 // PaymentResponse represents the response from creating a payment
@@ -138,12 +151,12 @@ type PaymentResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
 	Data    struct {
-		ID         string  `json:"id"`
-		Status     string  `json:"status"`
-		Amount     float64 `json:"amount"`
-		Currency   string  `json:"currency"`
-		PaymentURL string  `json:"payment_url"`
-		CreatedAt  string  `json:"created_at"`
+		ID        string  `json:"id"`
+		Status    string  `json:"status"`
+		Amount    float64 `json:"amount"`
+		Currency  string  `json:"currency"`
+		URL       string  `json:"url"`
+		CreatedAt string  `json:"created_at"`
 	} `json:"data"`
 }
 
@@ -152,6 +165,7 @@ type Client struct {
 	apiKey     string
 	apiSecret  string
 	httpClient *http.Client
+	baseURL    string
 }
 
 // NewClient creates a new Tazapay API client
@@ -162,6 +176,7 @@ func NewClient(apiKey, apiSecret string) *Client {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		baseURL: baseURL,
 	}
 }
 
@@ -182,7 +197,7 @@ func (c *Client) doRequest(method, path string, body interface{}) ([]byte, error
 		reqBody = bytes.NewBuffer(jsonData)
 	}
 
-	url := fmt.Sprintf("%s%s", baseURL, path)
+	url := fmt.Sprintf("%s%s", c.baseURL, path)
 	req, err := http.NewRequest(method, url, reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
@@ -234,15 +249,15 @@ func (c *Client) doRequest(method, path string, body interface{}) ([]byte, error
 func (c *Client) GetBalance() (*BalanceResponse, error) {
 	respBody, err := c.doRequest("GET", "/balance", nil)
 	if err != nil {
-		return nil, fmt.Errorf("error checking balance: %w", err)
+		return nil, fmt.Errorf("error getting balance: %w", err)
 	}
 
-	var balance BalanceResponse
-	if err := json.Unmarshal(respBody, &balance); err != nil {
+	var balanceResp BalanceResponse
+	if err := json.Unmarshal(respBody, &balanceResp); err != nil {
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
 
-	return &balance, nil
+	return &balanceResp, nil
 }
 
 // CreateBeneficiary creates a new beneficiary
@@ -262,37 +277,6 @@ func (c *Client) CreateBeneficiary(beneficiary *Beneficiary) (*BeneficiaryRespon
 
 // CreatePayout creates a new payout
 func (c *Client) CreatePayout(payout *Payout) (*PayoutResponse, error) {
-	// Validate required fields
-	if payout.Amount <= 0 {
-		return nil, fmt.Errorf("amount must be greater than 0")
-	}
-	if payout.Currency == "" {
-		return nil, fmt.Errorf("currency is required")
-	}
-	if payout.Beneficiary == "" {
-		return nil, fmt.Errorf("beneficiary ID is required")
-	}
-	if payout.HoldingCurrency == "" {
-		return nil, fmt.Errorf("holding currency is required")
-	}
-
-	// Set default values if not provided
-	if payout.BeneficiaryDetails.DestinationDetails.Type == "" {
-		payout.BeneficiaryDetails.DestinationDetails.Type = "bank"
-	}
-	if payout.Purpose == "" {
-		payout.Purpose = "PYR002" // Business Services
-	}
-	if payout.Type == "" {
-		payout.Type = "local"
-	}
-	if payout.ChargeType == "" {
-		payout.ChargeType = "shared"
-	}
-	if payout.StatementDescriptor == "" {
-		payout.StatementDescriptor = "Payout via Tazapay"
-	}
-
 	respBody, err := c.doRequest("POST", "/payout", payout)
 	if err != nil {
 		return nil, fmt.Errorf("error creating payout: %w", err)
@@ -335,16 +319,36 @@ func (c *Client) GetAuthToken() string {
 
 // CreatePayment creates a new payment
 func (c *Client) CreatePayment(payment *PaymentRequest) (*PaymentResponse, error) {
-	path := "/checkout"
-	respBody, err := c.doRequest("POST", path, payment)
+	respBody, err := c.doRequest("POST", "/checkout", payment)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating payment: %w", err)
 	}
 
 	var response PaymentResponse
 	if err := json.Unmarshal(respBody, &response); err != nil {
-		return nil, fmt.Errorf("error unmarshaling response: %w", err)
+		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
 
 	return &response, nil
+}
+
+// GetLogs retrieves recent logs from the Tazapay API
+func (c *Client) GetLogs(count int) ([]interface{}, error) {
+	path := fmt.Sprintf("/logs?count=%d", count)
+	respBody, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error getting logs: %w", err)
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	logs, ok := result["data"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid response format")
+	}
+
+	return logs, nil
 }
