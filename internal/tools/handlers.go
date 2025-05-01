@@ -65,28 +65,40 @@ func (tm *ToolManager) handleFXTool(ctx context.Context, request mcp.CallToolReq
 // Handle payment creation
 func (tm *ToolManager) handlePaymentTool(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	args := request.Params.Arguments
+
 	payment := &tazapay.PaymentRequest{
 		Amount:          args["amount"].(float64),
 		Currency:        args["currency"].(string),
-		InvoiceCurrency: args["currency"].(string), // Same as Currency
+		InvoiceCurrency: args["currency"].(string),
 		Description:     args["description"].(string),
 		TransactionDesc: args["description"].(string),
 		SuccessURL:      args["success_url"].(string),
 		CancelURL:       args["cancel_url"].(string),
 		CustomerEmail:   args["customer_email"].(string),
 		CustomerName:    args["customer_name"].(string),
-	}
-
-	// Set customer details
-	payment.CustomerDetails.Email = payment.CustomerEmail
-	payment.CustomerDetails.Name = payment.CustomerName
-	if phone, ok := args["customer_phone"].(string); ok {
-		payment.CustomerDetails.Phone.Number = phone
-		payment.CustomerDetails.Phone.CallingCode = "1" // Default to US
-	}
-	if address, ok := args["customer_address"].(string); ok {
-		payment.CustomerDetails.Address = address
-		payment.CustomerDetails.Country = "US" // Default to US
+		CustomerDetails: struct {
+			Email string `json:"email"`
+			Name  string `json:"name"`
+			Phone struct {
+				Number      string `json:"number"`
+				CallingCode string `json:"calling_code"`
+			} `json:"phone"`
+			Address string `json:"address"`
+			Country string `json:"country"`
+		}{
+			Email:   args["customer_email"].(string),
+			Name:    args["customer_name"].(string),
+			Country: "BR", // Default to Brazil
+			Phone: struct {
+				Number      string `json:"number"`
+				CallingCode string `json:"calling_code"`
+			}{
+				CallingCode: "1",
+				Number:      args["customer_phone"].(string),
+			},
+			Address: args["customer_address"].(string),
+		},
+		PaymentMethods: []string{"card", "bank_transfer"},
 	}
 
 	response, err := tm.client.CreatePayment(payment)

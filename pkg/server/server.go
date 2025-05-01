@@ -133,22 +133,38 @@ func (s *MCPServer) handlePaymentTool(ctx context.Context, request mcp.CallToolR
 
 	// Create payment request
 	paymentReq := &tazapay.PaymentRequest{
-		Amount:        params["amount"].(float64),
-		Currency:      params["currency"].(string),
-		Description:   params["description"].(string),
-		SuccessURL:    params["success_url"].(string),
-		CancelURL:     params["cancel_url"].(string),
-		CustomerEmail: params["customer_email"].(string),
-		CustomerName:  params["customer_name"].(string),
-	}
-
-	// Set customer details
-	if phone, ok := params["customer_phone"].(string); ok {
-		paymentReq.CustomerDetails.Phone.Number = phone
-		paymentReq.CustomerDetails.Phone.CallingCode = "1" // Default to US
-	}
-	if address, ok := params["customer_address"].(string); ok {
-		paymentReq.CustomerDetails.Address = address
+		Amount:          params["amount"].(float64),
+		Currency:        params["currency"].(string),
+		InvoiceCurrency: params["currency"].(string),
+		Description:     params["description"].(string),
+		TransactionDesc: params["description"].(string),
+		SuccessURL:      params["success_url"].(string),
+		CancelURL:       params["cancel_url"].(string),
+		CustomerEmail:   params["customer_email"].(string),
+		CustomerName:    params["customer_name"].(string),
+		CustomerDetails: struct {
+			Email string `json:"email"`
+			Name  string `json:"name"`
+			Phone struct {
+				Number      string `json:"number"`
+				CallingCode string `json:"calling_code"`
+			} `json:"phone"`
+			Address string `json:"address"`
+			Country string `json:"country"`
+		}{
+			Email:   params["customer_email"].(string),
+			Name:    params["customer_name"].(string),
+			Country: "BR", // Default to Brazil
+			Phone: struct {
+				Number      string `json:"number"`
+				CallingCode string `json:"calling_code"`
+			}{
+				CallingCode: "1",
+				Number:      params["customer_phone"].(string),
+			},
+			Address: params["customer_address"].(string),
+		},
+		PaymentMethods: []string{"card", "bank_transfer"},
 	}
 
 	// Create payment using client

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -11,24 +12,26 @@ import (
 )
 
 func TestPaymentCreation(t *testing.T) {
-	// Get the absolute path to the config directory
-	configPath, err := filepath.Abs("../config")
+	// Get the current working directory
+	wd, err := os.Getwd()
 	if err != nil {
-		t.Fatalf("Error getting config path: %v", err)
+		t.Fatalf("Error getting working directory: %v", err)
 	}
 
 	// Initialize configuration
 	viper.SetConfigName(".tazapay-mcp-server")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(configPath)
+	viper.SetConfigType("yml")
+	viper.AddConfigPath(filepath.Join(wd, "..", "config")) // Look in the config directory
+	viper.AddConfigPath(filepath.Join(wd, ".."))           // Look in project root
+	viper.AddConfigPath(os.Getenv("HOME"))                 // Look in home directory
 
 	if err := viper.ReadInConfig(); err != nil {
 		t.Fatalf("Error reading config: %v", err)
 	}
 
 	// Get API credentials
-	apiKey := viper.GetString("api_key")
-	apiSecret := viper.GetString("api_secret")
+	apiKey := viper.GetString("TAZAPAY_API_KEY")
+	apiSecret := viper.GetString("TAZAPAY_API_SECRET")
 
 	if apiKey == "" || apiSecret == "" {
 		t.Fatal("API key or secret not found in config")
@@ -39,25 +42,39 @@ func TestPaymentCreation(t *testing.T) {
 
 	// Test payment creation with required fields
 	paymentReq := &tazapay.PaymentRequest{
-		Amount:          100.00,
-		Currency:        "USD", // Using ISO 4217 alpha-3 currency code
-		InvoiceCurrency: "USD", // Same as Currency for this test
-		Description:     "Test payment",
+		Amount:          2000.00, // Amount in currency units
+		Currency:        "BRL",
+		InvoiceCurrency: "BRL",
+		Description:     "Test payment for Tazapay integration",
 		TransactionDesc: "Test payment for Tazapay integration",
 		SuccessURL:      "https://example.com/success",
 		CancelURL:       "https://example.com/cancel",
 		CustomerEmail:   "test@example.com",
 		CustomerName:    "Test User",
-		PaymentMethods:  []string{"card", "wire_transfer"},
+		CustomerDetails: struct {
+			Email string `json:"email"`
+			Name  string `json:"name"`
+			Phone struct {
+				Number      string `json:"number"`
+				CallingCode string `json:"calling_code"`
+			} `json:"phone"`
+			Address string `json:"address"`
+			Country string `json:"country"`
+		}{
+			Email:   "test@example.com",
+			Name:    "Test User",
+			Country: "BR",
+			Phone: struct {
+				Number      string `json:"number"`
+				CallingCode string `json:"calling_code"`
+			}{
+				CallingCode: "1",
+				Number:      "1234567890",
+			},
+			Address: "123 Test St, Test City, BR",
+		},
+		PaymentMethods: []string{"card", "bank_transfer"},
 	}
-
-	// Set customer details
-	paymentReq.CustomerDetails.Email = paymentReq.CustomerEmail
-	paymentReq.CustomerDetails.Name = paymentReq.CustomerName
-	paymentReq.CustomerDetails.Phone.Number = "1234567890"
-	paymentReq.CustomerDetails.Phone.CallingCode = "1" // US country code
-	paymentReq.CustomerDetails.Address = "123 Test St, Test City"
-	paymentReq.CustomerDetails.Country = "US"
 
 	response, err := client.CreatePayment(paymentReq)
 	if err != nil {
@@ -67,8 +84,8 @@ func TestPaymentCreation(t *testing.T) {
 	// Display payment details in a user-friendly format
 	fmt.Println("\nPayment Details:")
 	fmt.Println("---------------")
-	fmt.Printf("Amount: $%.2f %s\n", paymentReq.Amount, paymentReq.Currency)
-	fmt.Printf("Description: %s\n", paymentReq.TransactionDesc)
+	fmt.Printf("Amount: %.2f %s\n", paymentReq.Amount, paymentReq.Currency)
+	fmt.Printf("Description: %s\n", paymentReq.Description)
 	fmt.Printf("Customer: %s (%s)\n", paymentReq.CustomerName, paymentReq.CustomerEmail)
 	fmt.Println("\nHere is your payment link:")
 	fmt.Println("------------------------")

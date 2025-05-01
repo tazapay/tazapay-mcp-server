@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"os/signal"
@@ -21,13 +22,16 @@ func initConfig() (*tazapay.Client, error) {
 	}
 	fmt.Printf("Current working directory: %s\n", wd)
 
-	// Set up Viper with explicit yml extension
-	viper.SetConfigName(".tazapay-mcp-server")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(filepath.Join(wd, "config")) // Look in config directory
-	viper.AddConfigPath(wd)                          // Also look in current directory as fallback
+	// Set up Viper
+	viper.SetConfigName(".tazapay-mcp-server.yml") // Name of the config file (with extension)
+	viper.SetConfigType("yaml")                    // Config file type
 
-	// Try to read the config file
+	// Add config paths in order of priority
+	viper.AddConfigPath(filepath.Join(wd, "config")) // Look in config directory first
+	viper.AddConfigPath(wd)                          // Then look in current directory
+	viper.AddConfigPath(os.Getenv("HOME"))           // Finally look in home directory
+
+	// Read the config file
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("error reading config file: %v", err)
 	}
@@ -35,16 +39,19 @@ func initConfig() (*tazapay.Client, error) {
 	// Print which config file is being used
 	fmt.Printf("Using config file: %s\n", viper.ConfigFileUsed())
 
-	// Get API credentials
-	apiKey := viper.GetString("api_key")
-	apiSecret := viper.GetString("api_secret")
+	// Retrieve the keys
+	accessKey := viper.GetString("TAZAPAY_API_KEY")
+	secretKey := viper.GetString("TAZAPAY_API_SECRET")
 
-	if apiKey == "" || apiSecret == "" {
-		return nil, fmt.Errorf("API key or secret not found in config file")
-	}
+	// Combine accessKey and secretKey with a colon
+	authString := fmt.Sprintf("%s:%s", accessKey, secretKey)
+
+	// Encode the string to Base64
+	authToken := base64.StdEncoding.EncodeToString([]byte(authString))
+	viper.Set("TAZAPAY_AUTH_TOKEN", authToken)
 
 	// Create Tazapay client
-	return tazapay.NewClient(apiKey, apiSecret), nil
+	return tazapay.NewClient(accessKey, secretKey), nil
 }
 
 func main() {
