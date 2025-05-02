@@ -50,6 +50,7 @@ func main() {
 	//tools.AddHelloTool(s)
 	tools.AddAddTool(s)
 	tools.AddFXTool(s)
+	tools.AddPaymentLinkTool(s)
 
 	// Start the stdio server
 	if err := server.ServeStdio(s); err != nil {
