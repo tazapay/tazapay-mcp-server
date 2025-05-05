@@ -47,8 +47,7 @@ func main() {
 		"0.0.1",
 	)
 	
-	//Add tools to the server
-	tools.AddAddTool(s)
+	//Add FX tools to the server
 	tools.AddFXTool(s)
 	
 	// added tool to generate payment link
