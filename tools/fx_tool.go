@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/viper"
-	"net/http"
-	"os"
+	"github.com/tazapay/tazapay-mcp-server/constants"
 )
 
 func AddFXTool(s *server.MCPServer) {
@@ -51,7 +53,7 @@ func handleFXTool(
 
 func Fxcall(from string, to string, amount int) (*mcp.CallToolResult, error) {
 	// API endpoint and parameters
-	baseURL := "https://service.tazapay.com/v3/fx/payout"
+	baseURL := constants.PaymentPayoutFxBaseURL
 
 	// Construct the full URL with query parameters
 	url := fmt.Sprintf("%s?initial_currency=%s&final_currency=%s&amount=%d", baseURL, from, to, amount)

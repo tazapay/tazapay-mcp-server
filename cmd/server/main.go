@@ -46,10 +46,12 @@ func main() {
 		"tazapay",
 		"0.0.1",
 	)
+	
 	//Add tools to the server
-	//tools.AddHelloTool(s)
 	tools.AddAddTool(s)
 	tools.AddFXTool(s)
+	
+	// added tool to generate payment link
 	tools.AddPaymentLinkTool(s)
 
 	// Start the stdio server
