@@ -1,0 +1,9 @@
+# Common cleanup
+.git
+node_modules
+*.log
+*.env
+*.DS_Store
+.vscode
+.idea
+.trunk/

@@ -3,33 +3,36 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
+
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/viper"
 	"github.com/tazapay/tazapay-mcp-server/tools"
-	"os"
 )
 
 func initConfig() {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Printf("Error getting home directory: %v\n", err)
-		return
-	}
-	// Set up Viper
-	viper.AddConfigPath(home)                  // Path to look for the config file
-	viper.SetConfigName(".tazapay-mcp-server") // Name of the config file (without extension)
-	viper.SetConfigType("yaml")                // Config file type
-	// Path to look for the config file in the current directory
+	// Get the env variables if input from CLI
+	viper.AutomaticEnv()
 
-	// Read the config file
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file: %v\n", err)
-		return
+	// Try loading config file if exists (for local dev)
+	home, err := os.UserHomeDir()
+	if err == nil {
+		// Set up Viper
+		viper.AddConfigPath(home)                  // Path to look for the config file
+		viper.SetConfigName(".tazapay-mcp-server") // Name of the config file (without extension)
+		viper.SetConfigType("yaml")                // Config file type
+		_ = viper.ReadInConfig()                   // ignore error if not found and check for
 	}
 
 	// Retrieve the keys
 	accessKey := viper.GetString("TAZAPAY_API_KEY")
 	secretKey := viper.GetString("TAZAPAY_API_SECRET")
+
+	// return Error if env variables is not passed during runtime
+	if accessKey == "" || secretKey == "" {
+		fmt.Println("TAZAPAY_API_KEY or TAZAPAY_API_SECRET not set. Enter the following in terminal command with [-e] OPTION or add a `.tazapay-mcp-server.yaml` file in your home directory. ")
+		os.Exit(1)
+	}
 
 	// Combine accessKey and secretKey with a colon
 	authString := fmt.Sprintf("%s:%s", accessKey, secretKey)
@@ -46,10 +49,10 @@ func main() {
 		"tazapay",
 		"0.0.1",
 	)
-	
+
 	//Add FX tools to the server
 	tools.AddFXTool(s)
-	
+
 	// added tool to generate payment link
 	tools.AddPaymentLinkTool(s)
 
@@ -57,13 +60,4 @@ func main() {
 	if err := server.ServeStdio(s); err != nil {
 		fmt.Printf("Server error: %v\n", err)
 	}
-
-	// Uncomment the following lines to test the Fxcall function
-	//res, err := tools.Fxcall("SGD", "CAD", 1000)
-	//if err != nil {
-	//	fmt.Printf("Error: %v\n", err)
-	//	return
-	//}
-	//fmt.Printf("Result: %v\n", res)
-
 }
