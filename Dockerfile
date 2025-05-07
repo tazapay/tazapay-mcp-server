@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Fetch and store the certificate
-RUN echo | openssl s_client -showcerts -connect api-orange.tazapay.com:443 2>/dev/null \
+RUN echo | openssl s_client -showcerts -connect service.tazapay.com:443 2>/dev/null \
     | awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/ { print }' \
     > /usr/local/share/ca-certificates/tazapay.crt
 
