@@ -94,7 +94,7 @@ func handlePaymentLinkTool(ctx context.Context, request mcp.CallToolRequest,
 // CreatePaymentLink creates a payment link
 func CreatePaymentLink(invoiceCurrency string, amount float64, customerName string, customerEmail string, customerCountry string, transactionDescription string,
 ) (*mcp.CallToolResult, error) {
-	baseURL := constants.PaymentLinkBaseURL_orange
+	baseURL := constants.PaymentLinkBaseURL_prod
 	requestBody := map[string]any{
 		"amount":                  amount,
 		"invoice_currency":        invoiceCurrency,
