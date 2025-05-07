@@ -53,7 +53,7 @@ func handleFXTool(
 
 func Fxcall(from string, to string, amount int) (*mcp.CallToolResult, error) {
 	// API endpoint and parameters
-	baseURL := constants.PaymentFxBaseURL_orange
+	baseURL := constants.PaymentFxBaseURL_prod
 
 	// Construct the full URL with query parameters
 	url := fmt.Sprintf("%s?initial_currency=%s&final_currency=%s&amount=%d", baseURL, from, to, amount)
