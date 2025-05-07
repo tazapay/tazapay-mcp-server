@@ -15,19 +15,27 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o tazapay-mcp-server ./cmd/server
 
 # Runtime Stage (Minimal Image)
-FROM debian:bookworm-slim
+FROM debian:bullseye-slim
 
-# Set working directory in the minimal image
+# Set working directory
 WORKDIR /app
 
-# Install ca-certificates to allow trust of custom root certs
-RUN apt-get update && apt-get install -y ca-certificates
+# Install required packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the custom certificate (tazapay-chain.crt) into the container
-COPY tazapay.crt /usr/local/share/ca-certificates/tazapay.crt
+# Fetch and store the certificate
+RUN echo | openssl s_client -showcerts -connect api-orange.tazapay.com:443 2>/dev/null \
+    | awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/ { print }' \
+    > /usr/local/share/ca-certificates/tazapay.crt
 
-# Update the CA certificates (this will include the custom CA)
+# Update CA trust store
 RUN update-ca-certificates
+
+# Optional: Final CMD
+CMD ["bash"]
 
 # Copy the compiled Go binary from the builder stage
 COPY --from=builder /app/tazapay-mcp-server .
