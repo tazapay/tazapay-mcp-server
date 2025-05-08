@@ -104,9 +104,9 @@ func validateAndExtractArgs(args map[string]any) (types.PaymentLinkParams, error
 // NewPaymentLinkRequest constructs the API payload from the validated parameters
 func NewPaymentLinkRequest(p *types.PaymentLinkParams) types.PaymentLinkRequest {
 	return types.PaymentLinkRequest{
-		Amount:          int64(p.PaymentAmount * constants.Num100),
-		InvoiceCurrency: p.InvoiceCurrency,
-		TransactionDesc: p.Description,
+		Amount:                 int64(p.PaymentAmount * constants.Num100),
+		InvoiceCurrency:        p.InvoiceCurrency,
+		TransactionDescription: p.Description,
 		CustomerDetails: map[string]string{
 			"name":    p.CustomerName,
 			"email":   p.CustomerEmail,

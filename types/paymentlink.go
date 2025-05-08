@@ -12,8 +12,8 @@ type PaymentLinkParams struct {
 
 // PaymentLinkRequest defines the payload sent to the internal API
 type PaymentLinkRequest struct {
-	CustomerDetails map[string]string `json:"customer_details"`
-	InvoiceCurrency string            `json:"invoice_currency"`
-	TransactionDesc string            `json:"transaction_description"`
-	Amount          int64             `json:"amount"`
+	CustomerDetails        map[string]string `json:"customer_details"`
+	InvoiceCurrency        string            `json:"invoice_currency"`
+	TransactionDescription string            `json:"transaction_description"`
+	Amount                 int64             `json:"amount"`
 }

@@ -89,6 +89,7 @@ func HandleGETHttpRequest(ctx context.Context, url, method string) (map[string]a
 
 	if resp.StatusCode < constants.HTTPStatusOKMin ||
 		resp.StatusCode >= constants.HTTPStatusOKMax {
+
 		bodyBytes, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
 			return nil, fmt.Errorf("%w: %v, body: <failed to read body: %w>",
