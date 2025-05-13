@@ -55,7 +55,7 @@ Ensure the following tools are installed before setup:
   
 - Pull the Following Docker Image from dockerhub into your local machine
   ```bash
-  docker pull suyashtaza30/tazapay-mcp-server:latest
+  docker pull tazapay/tazapay-mcp-server:latest
   ```
 
 - Add the following to your `claude_desktop_config.json`:
@@ -69,7 +69,7 @@ Ensure the following tools are installed before setup:
            "run","--rm","-i",
            "-e","TAZAPAY_API_KEY",
            "-e","TAZAPAY_API_SECRET",
-           "suyashtaza30/tazapay-mcp-server:latest"
+           "tazapay/tazapay-mcp-server:latest"
          ],
          "env": {
            "TAZAPAY_API_KEY": "your_tazapay_api_key",
@@ -145,7 +145,4 @@ Ensure the following tools are installed before setup:
 
 This project is licensed under the MIT license. Refer to LICENSE for details.
 
-```
-tazapay-mcp-server
-
-```
+[tazapay-License](https://github.com/tazapay/tazapay-mcp-server/blob/feat-balance-tool-addition/LICENSE)
