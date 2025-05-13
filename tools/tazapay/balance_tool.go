@@ -37,7 +37,7 @@ func (t *BalanceTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	currency, _ := args["currency"].(string)
 
 	path := constants.BalancePath
-	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, constants.OrangeBaseURL+path, constants.GetHTTPMethod)
+	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, constants.BalanceBaseURLProd+path, constants.GetHTTPMethod)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get balance: %w", err)
 	}

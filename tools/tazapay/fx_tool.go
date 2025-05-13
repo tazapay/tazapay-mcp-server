@@ -52,7 +52,7 @@ func (t *FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.Call
 
 	// construct URL for API call
 	url := fmt.Sprintf("%s?initial_currency=%s&final_currency=%s&amount=%d",
-		constants.PaymentFxBaseURLOrange, params.From, params.To, int(params.Amount))
+		constants.PaymentFxBaseURLProd, params.From, params.To, int(params.Amount))
 
 	t.logger.Info("Calling FX API", slog.String("url", url))
 
