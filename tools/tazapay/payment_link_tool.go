@@ -3,20 +3,27 @@ package tazapay
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/tazapay/tazapay-mcp-server/constants"
+	"github.com/tazapay/tazapay-mcp-server/pkg/utils"
 	"github.com/tazapay/tazapay-mcp-server/types"
-	"github.com/tazapay/tazapay-mcp-server/utils"
 )
 
 // PaymentLinkTool defines the tool structure
-type PaymentLinkTool struct{}
+type PaymentLinkTool struct {
+	logger *slog.Logger
+}
 
 // NewPaymentLinkTool returns a new instance of the PaymentLinkTool
-func NewPaymentLinkTool() *PaymentLinkTool {
-	return &PaymentLinkTool{}
+func NewPaymentLinkTool(logger *slog.Logger) *PaymentLinkTool {
+	logger.Info("Initializing PaymentLinkTool")
+
+	return &PaymentLinkTool{
+		logger: logger,
+	}
 }
 
 // Definition registers this tool with the MCP platform
@@ -34,31 +41,41 @@ func (*PaymentLinkTool) Definition() mcp.Tool {
 }
 
 // Handle processes the tool request and returns a result
-func (*PaymentLinkTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (t *PaymentLinkTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	args := req.Params.Arguments
-	// validate and extract arguments
-	params, err := validateAndExtractArgs(args)
+
+	t.logger.Info("handling payment link tool request", slog.Any("args", args))
+
+	params, err := validateAndExtractArgs(t, args)
 	if err != nil {
+		t.logger.Error("argument validation failed", slog.String("error", err.Error()))
 		return nil, err
 	}
-	// construct payload
+
 	payload := NewPaymentLinkRequest(&params)
-	// call payment link API
-	resp, err := utils.HandlePOSTHttpRequest(ctx, constants.PaymentLinkBaseURLOrange, payload, constants.PostHTTPMethod)
+	t.logger.Info("constructed payment link payload", slog.Any("payload", payload))
+
+	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, constants.PaymentLinkBaseURLOrange,
+		payload, constants.PostHTTPMethod)
 	if err != nil {
+		t.logger.Error("payment link API call failed", slog.String("error", err.Error()))
 		return nil, fmt.Errorf("HandlePOSTHttpRequest failed: %w", err)
 	}
-	// extract payment link
-	data, ok3 := resp["data"].(map[string]any)
-	if !ok3 {
+
+	data, ok := resp["data"].(map[string]any)
+	if !ok {
+		t.logger.Error("no data found in payment link API response", slog.Any("response", resp))
 		return nil, constants.ErrNoDataInResponse
 	}
 
-	paymentLink, ok4 := data["url"].(string)
-	if !ok4 {
+	paymentLink, ok := data["url"].(string)
+	if !ok {
+		t.logger.Error("payment link missing in API response", slog.Any("data", data))
 		return nil, constants.ErrMissingPaymentLink
 	}
-	// return result
+
+	t.logger.Info("payment link successfully generated", slog.String("url", paymentLink))
+
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			mcp.TextContent{
@@ -70,32 +87,32 @@ func (*PaymentLinkTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*m
 }
 
 // validateAndExtractArgs validates request arguments and returns structured parameters
-func validateAndExtractArgs(args map[string]any) (types.PaymentLinkParams, error) {
+func validateAndExtractArgs(t *PaymentLinkTool, args map[string]any) (types.PaymentLinkParams, error) {
 	var p types.PaymentLinkParams
 	var ok bool
 
 	if p.PaymentAmount, ok = args[constants.PaymentAmountField].(float64); !ok {
-		return p, utils.WrapFieldTypeError(constants.PaymentAmountField)
+		return p, utils.WrapFieldTypeError(t.logger, constants.PaymentAmountField)
 	}
 
 	if p.InvoiceCurrency, ok = args[constants.InvoiceCurrencyField].(string); !ok {
-		return p, utils.WrapFieldTypeError(constants.InvoiceCurrencyField)
+		return p, utils.WrapFieldTypeError(t.logger, constants.InvoiceCurrencyField)
 	}
 
 	if p.Description, ok = args[constants.TransactionDescField].(string); !ok {
-		return p, utils.WrapFieldTypeError(constants.TransactionDescField)
+		return p, utils.WrapFieldTypeError(t.logger, constants.TransactionDescField)
 	}
 
 	if p.CustomerName, ok = args[constants.CustomerNameField].(string); !ok {
-		return p, utils.WrapFieldTypeError(constants.CustomerNameField)
+		return p, utils.WrapFieldTypeError(t.logger, constants.CustomerNameField)
 	}
 
 	if p.CustomerEmail, ok = args[constants.CustomerEmailField].(string); !ok {
-		return p, utils.WrapFieldTypeError(constants.CustomerEmailField)
+		return p, utils.WrapFieldTypeError(t.logger, constants.CustomerEmailField)
 	}
 
 	if p.CustomerCountry, ok = args[constants.CustomerCountryField].(string); !ok {
-		return p, utils.WrapFieldTypeError(constants.CustomerCountryField)
+		return p, utils.WrapFieldTypeError(t.logger, constants.CustomerCountryField)
 	}
 
 	return p, nil

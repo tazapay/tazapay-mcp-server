@@ -1,5 +1,5 @@
 # Build Stage (Using Golang image)
-FROM golang:1.24.2-alpine AS builder
+FROM golang:1.24.3-alpine AS builder
 
 # Set working directory inside container
 WORKDIR /app
@@ -15,7 +15,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o tazapay-mcp-server ./cmd/server
 
 # Runtime Stage (Minimal Image)
-FROM debian:bullseye-slim
+FROM debian:stable-slim
 
 # Set working directory
 WORKDIR /app
@@ -24,6 +24,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     ca-certificates \
+    bash \
     && rm -rf /var/lib/apt/lists/*
 
 # Fetch and store the certificate
@@ -33,6 +34,12 @@ RUN echo | openssl s_client -showcerts -connect api-orange.tazapay.com:443 2>/de
 
 # Update CA trust store
 RUN update-ca-certificates
+
+# Set default log file path (can be overridden during runtime)
+ENV LOG_FILE_PATH=/app/logs/app.log
+
+# Ensure the log directory exists
+RUN mkdir -p /app/logs
 
 # Optional: Final CMD
 CMD ["bash"]

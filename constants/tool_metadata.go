@@ -38,3 +38,13 @@ const (
 	FXAmountField       = "amount"
 	FXAmountDescription = "Amount to convert. It should be a number and should not have any decimal places."
 )
+
+// Balance Fetch tool
+const (
+	BalanceToolName = "tazapay_fetch_balance_tool"
+	BalanceToolDesc = "Get balance from Tazapay. Send currency code to fetch balance for that currency." +
+		" For all the balances available in Tazapay send empty string."
+
+	BalanceCurrencyField = "currency"
+	BalanceCurrencyDesc  = "Currency to fetch balance for. It should be in 3 letter currency code. Example : USD, INR"
+)

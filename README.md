@@ -167,3 +167,8 @@ Ensure the following tools are installed before setup:
 ## License
 
 This project is licensed under the MIT license. Refer to LICENSE for details.
+
+```
+tazapay-mcp-server
+
+```

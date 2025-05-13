@@ -1,40 +1,69 @@
 package constants
 
-// Payment Tools constants based on env
-
-// prod
+// Base URLs for different environments
 const (
-	PaymentLinkBaseURLProd = "https://service.tazapay.com/v3/checkout"
-	PaymentFxBaseURLProd   = "https://service.tazapay.com/v3/fx/payout"
+	// Production
+	ProdBaseURL = "https://service.tazapay.com/v3"
+
+	// Orange
+	OrangeBaseURL = "https://api-orange.tazapay.com/v3"
+
+	// Purple
+	PurpleBaseURL = "https://api-purple.tazapay.com/v3"
+
+	// Brown
+	BrownBaseURL = "https://api-brown.tazapay.com/v3"
+
+	// Yellow
+	YellowBaseURL = "https://api-yellow.tazapay.com/v3"
 )
 
-// orange
+// API Path Segments
 const (
-	PaymentLinkBaseURLOrange = "https://api-orange.tazapay.com/v3/checkout"
-	PaymentFxBaseURLOrange   = "https://api-orange.tazapay.com/v3/fx/payout"
+	CheckoutPath = "/checkout"
+	FxPayoutPath = "/fx/payout"
+	BalancePath  = "/balance"
 )
 
-// purple
+// Production URLs
 const (
-	PaymentLinkBaseURLPurple = "https://api-purple.tazapay.com/v3/checkout"
-	PaymentFxBaseURLPurple   = "https://api-purple.tazapay.com/v3/fx/payout"
+	PaymentLinkBaseURLProd = ProdBaseURL + CheckoutPath
+	PaymentFxBaseURLProd   = ProdBaseURL + FxPayoutPath
+	BalanceBaseURLProd     = ProdBaseURL + BalancePath
 )
 
-// brown
+// Orange  URLs
 const (
-	PaymentLinkBaseURLBrown = "https://api-brown.tazapay.com/v3/checkout"
-	PaymentFxBaseURLBrown   = "https://api-brown.tazapay.com/v3/fx/payout"
+	PaymentLinkBaseURLOrange = OrangeBaseURL + CheckoutPath
+	PaymentFxBaseURLOrange   = OrangeBaseURL + FxPayoutPath
+	BalanceBaseURLOrange     = OrangeBaseURL + BalancePath
 )
 
-// yellow
+// Purple  URLs
 const (
-	PaymentLinkBaseURLYellow = "https://api-yellow.tazapay.com/v3/checkout"
-	PaymentFxBaseURLYellow   = "https://api-yellow.tazapay.com/v3/fx/payout"
+	PaymentLinkBaseURLPurple = PurpleBaseURL + CheckoutPath
+	PaymentFxBaseURLPurple   = PurpleBaseURL + FxPayoutPath
+	BalanceBaseURLPurple     = PurpleBaseURL + BalancePath
 )
 
-// String Placeholder Constants
+// Brown  URLs
 const (
-	Miscellaneous  = "Miscellaneous "
-	PostHTTPMethod = "POST"
-	GetHTTPMethod  = "GET"
+	PaymentLinkBaseURLBrown = BrownBaseURL + CheckoutPath
+	PaymentFxBaseURLBrown   = BrownBaseURL + FxPayoutPath
+	BalanceBaseURLBrown     = BrownBaseURL + BalancePath
+)
+
+// Yellow  URLs
+const (
+	PaymentLinkBaseURLYellow = YellowBaseURL + CheckoutPath
+	PaymentFxBaseURLYellow   = YellowBaseURL + FxPayoutPath
+	BalanceBaseURLYellow     = YellowBaseURL + BalancePath
+)
+
+// HTTP Method Constants
+const (
+	PostHTTPMethod   = "POST"
+	GetHTTPMethod    = "GET"
+	PutHTTPMethod    = "PUT"
+	DeleteHTTPMethod = "DELETE"
 )

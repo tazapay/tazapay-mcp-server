@@ -3,20 +3,27 @@ package tazapay
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/tazapay/tazapay-mcp-server/constants"
+	"github.com/tazapay/tazapay-mcp-server/pkg/utils"
 	"github.com/tazapay/tazapay-mcp-server/types"
-	"github.com/tazapay/tazapay-mcp-server/utils"
 )
 
 // FXTool defines the tool structure
-type FXTool struct{}
+type FXTool struct {
+	logger *slog.Logger
+}
 
 // NewFXTool returns a new instance of the FXTool
-func NewFXTool() *FXTool {
-	return &FXTool{}
+func NewFXTool(logger *slog.Logger) *FXTool {
+	logger.Info("Initializing FXTool")
+
+	return &FXTool{
+		logger: logger,
+	}
 }
 
 // Definition registers this tool with the MCP platform
@@ -31,12 +38,15 @@ func (*FXTool) Definition() mcp.Tool {
 }
 
 // Handle processes the tool request and returns a result
-func (*FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (t *FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	t.logger.Info("Handling FXTool request", slog.Any("params", req.Params.Arguments))
+
 	args := req.Params.Arguments
 
 	// validate and extract arguments
-	params, err := validateAndExtractFXArgs(args)
+	params, err := validateAndExtractFXArgs(t, args)
 	if err != nil {
+		t.logger.Error("Argument validation failed", slog.String("error", err.Error()))
 		return nil, err
 	}
 
@@ -44,54 +54,63 @@ func (*FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTo
 	url := fmt.Sprintf("%s?initial_currency=%s&final_currency=%s&amount=%d",
 		constants.PaymentFxBaseURLOrange, params.From, params.To, int(params.Amount))
 
+	t.logger.Info("Calling FX API", slog.String("url", url))
+
 	// call FX API
-	resp, err := utils.HandleGETHttpRequest(ctx, url, constants.GetHTTPMethod)
+	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, url, constants.GetHTTPMethod)
 	if err != nil {
+		t.logger.Error("FX API call failed", slog.String("error", err.Error()))
 		return nil, fmt.Errorf("HandleGETHttpRequest failed: %w", err)
 	}
 
 	// extract required fields from response
 	data, ok := resp["data"].(map[string]any)
 	if !ok {
+		t.logger.Error("No 'data' in FX API response")
 		return nil, constants.ErrNoDataInResponse
 	}
 
 	exRate, ok1 := data["exchange_rate"].(float64)
 	if !ok1 {
-		return nil, utils.WrapFieldTypeError("exchange_rate")
+		t.logger.Error("Invalid type for exchange_rate")
+		return nil, utils.WrapFieldTypeError(t.logger, "exchange_rate")
 	}
 
 	converted, ok2 := data["converted_amount"].(float64)
 	if !ok2 {
-		return nil, utils.WrapFieldTypeError("converted_amount")
+		t.logger.Error("Invalid type for converted_amount")
+		return nil, utils.WrapFieldTypeError(t.logger, "converted_amount")
 	}
+
+	result := fmt.Sprintf("Rate: %.2f, Converted Amount: %.2f", exRate, converted)
+	t.logger.Info("FXTool result ready", slog.String("result", result))
 
 	// return result
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			mcp.TextContent{
 				Type: "text",
-				Text: fmt.Sprintf("Rate: %.2f, Converted Amount: %.2f", exRate, converted),
+				Text: result,
 			},
 		},
 	}, nil
 }
 
 // validateAndExtractFXArgs validates request arguments and returns structured parameters
-func validateAndExtractFXArgs(args map[string]any) (types.FXParams, error) {
+func validateAndExtractFXArgs(t *FXTool, args map[string]any) (types.FXParams, error) {
 	var p types.FXParams
 	var ok bool
 
 	if p.Amount, ok = args[constants.FXAmountField].(float64); !ok {
-		return p, utils.WrapFieldTypeError(constants.FXAmountField)
+		return p, utils.WrapFieldTypeError(t.logger, constants.FXAmountField)
 	}
 
 	if p.From, ok = args[constants.FXFromField].(string); !ok {
-		return p, utils.WrapFieldTypeError(constants.FXFromField)
+		return p, utils.WrapFieldTypeError(t.logger, constants.FXFromField)
 	}
 
 	if p.To, ok = args[constants.FXToField].(string); !ok {
-		return p, utils.WrapFieldTypeError(constants.FXToField)
+		return p, utils.WrapFieldTypeError(t.logger, constants.FXToField)
 	}
 
 	return p, nil

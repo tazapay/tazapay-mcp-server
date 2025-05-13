@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
+	"log/slog"
 	"os"
 
 	"github.com/mark3labs/mcp-go/server"
@@ -10,10 +12,11 @@ import (
 
 	"github.com/tazapay/tazapay-mcp-server/constants"
 
+	logs "github.com/tazapay/tazapay-mcp-server/pkg/logs"
 	tools "github.com/tazapay/tazapay-mcp-server/tools/register"
 )
 
-func initConfig() error {
+func initConfig(logger *slog.Logger) error {
 	viper.AutomaticEnv()
 
 	home, err := os.UserHomeDir()
@@ -26,7 +29,7 @@ func initConfig() error {
 		if readErr != nil {
 			var notFoundErr viper.ConfigFileNotFoundError
 			if !errors.As(readErr, &notFoundErr) {
-				// Config file error, ignoring since fallback is ENV
+				logger.Error("Config read error", "error", readErr)
 				return readErr
 			}
 		}
@@ -36,6 +39,7 @@ func initConfig() error {
 	secretKey := viper.GetString("TAZAPAY_API_SECRET")
 
 	if accessKey == "" || secretKey == "" {
+		logger.Error("Missing API credentials")
 		return constants.ErrMissingAuthKeys
 	}
 
@@ -43,23 +47,41 @@ func initConfig() error {
 	authToken := base64.StdEncoding.EncodeToString([]byte(authString))
 	viper.Set("TAZAPAY_AUTH_TOKEN", authToken)
 
+	logger.Info("Configuration initialized")
+
 	return nil
 }
 
 func main() {
-	var err error
-	if err = initConfig(); err != nil {
+	// Create a logger configuration
+	logConfig := logs.Config{
+		Level:    "info",                           // Example log level
+		Format:   "json",                           // Example log format
+		FilePath: viper.GetString("LOG_FILE_PATH"), // Optional file path for logs, if needed
+	}
+
+	// Create the logger
+	logger, cleanup, err := logs.New(logConfig) // Empty path = default path near binary
+	defer cleanup(context.Background())
+
+	// Exit if logger failed
+	if err != nil {
 		os.Exit(1)
 	}
 
-	s := server.NewMCPServer(
-		"tazapay",
-		"0.0.1",
-	)
+	if err := initConfig(logger); err != nil {
+		logger.Error("failed to initialize config", "error", err)
+		os.Exit(1)
+	}
 
-	tools.RegisterTools(s)
+	s := server.NewMCPServer("tazapay", "0.0.1")
 
-	if err = server.ServeStdio(s); err != nil {
+	tools.RegisterTools(s, logger)
+
+	logger.Info("Started Tazapay MCP Server.")
+
+	if err := server.ServeStdio(s); err != nil {
+		logger.Error("server exited with error", "error", err)
 		os.Exit(1)
 	}
 }

@@ -2,6 +2,7 @@ package registertool
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -11,10 +12,18 @@ import (
 )
 
 // RegisterTools registers all tools with the server
-func RegisterTools(s *server.MCPServer) {
-	// Register all tools
-	registerTool(s, tazapay.NewFXTool())
-	registerTool(s, tazapay.NewPaymentLinkTool())
+func RegisterTools(s *server.MCPServer, logger *slog.Logger) {
+	logger.Info("Registering tools with MCP server")
+
+	tools := []types.Tool{
+		tazapay.NewFXTool(logger),
+		tazapay.NewPaymentLinkTool(logger),
+		tazapay.NewBalanceTool(logger),
+	}
+
+	for _, tool := range tools {
+		registerTool(s, tool)
+	}
 }
 
 // registerTool registers a single tool with the server
