@@ -36,6 +36,12 @@ func New(cfg Config) (*slog.Logger, func(ctx context.Context), error) {
 		logPath = getDefaultLogPath()
 	}
 
+	// Ensure the log directory exists.
+	logDir := filepath.Dir(logPath)
+	if err := os.MkdirAll(logDir, os.ModePerm); err != nil {
+		return nil, nil, fmt.Errorf("failed to create log directory: %v", err)
+	}
+
 	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, constants.OpenFileMode)
 	if err != nil {
 		// Still allowed to use Fprintf on stderr if logger isn't ready
@@ -49,8 +55,8 @@ func New(cfg Config) (*slog.Logger, func(ctx context.Context), error) {
 	logger := slog.New(handler)
 
 	cleanup := func(ctx context.Context) {
-		if ok := file.Close(); ok != nil {
-			logger.WarnContext(ctx, "Failed to close log file", "error", ok.Error())
+		if err := file.Close(); err != nil {
+			logger.WarnContext(ctx, "Failed to close log file", "error", err.Error())
 		}
 	}
 
@@ -59,6 +65,7 @@ func New(cfg Config) (*slog.Logger, func(ctx context.Context), error) {
 
 	return logger, cleanup, nil
 }
+
 
 // fallbackLogger returns a stderr-based logger if file init fails.
 func fallbackLogger(cfg Config) *slog.Logger {
