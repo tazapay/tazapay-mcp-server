@@ -20,7 +20,7 @@ The Tazapay MCP Server is a Model Context Protocol (MCP) server designed to brid
 
 ## Tools Overview
 
-### 1. `TazaPaymentLinkTool`
+#### 1. `generate_payment_link_tool`
 * **Input:**
    * `invoice_currency` (string)
    * `payment_amount` (number)
@@ -30,12 +30,17 @@ The Tazapay MCP Server is a Model Context Protocol (MCP) server designed to brid
    * `transaction_description` (string)
 * **Output:** Shareable Tazapay payment link
 
-### 2. `TazaFXTool`
+#### 2. `tazapay_fetch_fx_tool`
 * **Input:**
    * `from_currency` (string)
    * `to_currency` (string)
    * `amount` (number)
 * **Output:** FX rate and converted amount
+
+#### 3. `tazapay_fetch_balance_tool`
+* **Input:**
+  * `currency`(optional string) – If specified, returns the balance in the given currency.
+* **Output:** Returns the current available balance in the merchant’s account.
 
 ## Prerequisites
 
@@ -106,48 +111,6 @@ Ensure the following tools are installed before setup:
        "Tazapay-mcp-server": {
          "command": "/absolute/path/to/repo/tazapay-mcp-server",
          "description": "MCP server to integrate Tazapay API's and payments solutions.",
-         "args": [],
-         "tools": [
-           {
-             "name": "TazaPaymentLinkTool",
-             "description": "Generates a Tazapay payment link.",
-             "parameters": {
-               "invoice_currency": {
-                 "type": "string"
-               },
-               "payment_amount": {
-                 "type": "number"
-               },
-               "customer_name": {
-                 "type": "string"
-               },
-               "customer_email": {
-                 "type": "string"
-               },
-               "customer_country": {
-                 "type": "string"
-               },
-               "transaction_description": {
-                 "type": "string"
-               }
-             }
-           },
-           {
-             "name": "TazaFXTool",
-             "description": "Fetches real-time FX rates.",
-             "parameters": {
-               "from_currency": {
-                 "type": "string"
-               },
-               "to_currency": {
-                 "type": "string"
-               },
-               "amount": {
-                 "type": "number"
-               }
-             }
-           }
-         ]
        }
      }
    }
@@ -156,13 +119,27 @@ Ensure the following tools are installed before setup:
 
 ## Integration With other popular IDE 
 
-### GitHub Copilot Chat
+### GitHub Copilot Chat in VS code
 * Navigate to: **Settings > Features > Chat > Enable MCP**
-* Configure MCP tools via the **gear icon** in the Chat tab
+* Now add the given json file in **settings.json**
+  ```json
+  {
+    "mcp": {
+      "inputs": [],
+      "servers": {
+        "Tazapay-mcp-server": {
+          "command": "/absolute/path/to/repo/tazapay-mcp-server",
+          "description": "MCP server to integrate Tazapay APIs and payment solutions."
+        }
+      }
+    }
+  }
+  ```
+* Configure MCP tools via the **gear icon** in the Chat tab.
 
 ### Cursor IDE
 * Go to: **Settings > MCP > Add New Global MCP Server**
-* Paste the JSON configuration from above
+* Paste the JSON configuration from above and tools are ready to use within the chat. 
 
 ## License
 
