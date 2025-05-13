@@ -1,0 +1,1 @@
+include ../grpc-framework/make/service.mk
