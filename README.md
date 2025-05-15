@@ -86,8 +86,10 @@ Ensure the following tools are installed before setup:
 * Add a `.tazapay-mcp-server.yaml` config file in your home directory with the following content:
 
    ```yaml
-   TAZAPAY_API_SECRET: "your_secret"
-   TAZAPAY_API_KEY: "your_key"
+   TAZAPAY_API_KEY:
+               "your_key"
+   TAZAPAY_API_SECRET:
+               "your_secret"
    ```
    
 - Verify that the file '.tazapay-mcp-server.yaml' is added to your home directory. If not add the file there.
@@ -110,7 +112,7 @@ Ensure the following tools are installed before setup:
      "mcpServers": {
        "Tazapay-mcp-server": {
          "command": "/absolute/path/to/repo/tazapay-mcp-server",
-         "description": "MCP server to integrate Tazapay API's and payments solutions.",
+         "description": "MCP server to integrate Tazapay API's and payments solutions."
        }
      }
    }
@@ -125,7 +127,20 @@ Ensure the following tools are installed before setup:
   ```json
   {
     "mcp": {
-      "inputs": [],
+      "inputs": [
+      {
+        "type": "promptString",
+        "id": "tazapay_api_key",
+        "description": "Tazapay API Key ",
+        "password": false
+      },
+      {
+        "type": "promptString",
+        "id": "tazapay_api_secret",
+        "description": "Tazapay API Secret",
+        "password": true
+      }
+      ],
       "servers": {
         "Tazapay-mcp-server": {
           "command": "/absolute/path/to/repo/tazapay-mcp-server",
