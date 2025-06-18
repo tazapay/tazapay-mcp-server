@@ -86,8 +86,8 @@ Ensure the following tools are installed before setup:
 * Add a `.tazapay-mcp-server.yaml` config file in your home directory with the following content:
 
    ```yaml
-   TAZAPAY_API_SECRET: "your_secret"
    TAZAPAY_API_KEY: "your_key"
+   TAZAPAY_API_SECRET: "your_secret"
    ```
    
 - Verify that the file '.tazapay-mcp-server.yaml' is added to your home directory. If not add the file there.

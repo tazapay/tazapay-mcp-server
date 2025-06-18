@@ -1,4 +1,4 @@
-package tazapay
+package balance
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 
 	"github.com/tazapay/tazapay-mcp-server/constants"
 	"github.com/tazapay/tazapay-mcp-server/pkg/utils"
+	fmath "github.com/tazapay/tazapay-mcp-server/pkg/utils/math"
+	"github.com/tazapay/tazapay-mcp-server/pkg/utils/money"
 	"github.com/tazapay/tazapay-mcp-server/types"
 )
 
@@ -19,7 +21,7 @@ type FXTool struct {
 
 // NewFXTool returns a new instance of the FXTool
 func NewFXTool(logger *slog.Logger) *FXTool {
-	logger.Info("Initializing FXTool")
+	logger.Info("Registering FX_Tool")
 
 	return &FXTool{
 		logger: logger,
@@ -39,22 +41,23 @@ func (*FXTool) Definition() mcp.Tool {
 
 // Handle processes the tool request and returns a result
 func (t *FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	t.logger.Info("Handling FXTool request", slog.Any("params", req.Params.Arguments))
+	t.logger.InfoContext(ctx, "Handling FXTool request", slog.Any("params", req.Params.Arguments))
 
-	args := req.Params.Arguments
+	args := req.Params.Arguments.(map[string]any)
 
 	// validate and extract arguments
-	params, err := validateAndExtractFXArgs(t, args)
+	params, err := validateAndExtractFXArgs(t, ctx, args)
 	if err != nil {
 		t.logger.Error("Argument validation failed", slog.String("error", err.Error()))
 		return nil, err
 	}
 
 	// construct URL for API call
+	amountInt := int(fmath.Round2Decimal(params.Amount * 100))
 	url := fmt.Sprintf("%s?initial_currency=%s&final_currency=%s&amount=%d",
-		constants.PaymentFxBaseURLProd, params.From, params.To, int(params.Amount))
+		constants.PaymentFxBaseURLProd, params.From, params.To, amountInt)
 
-	t.logger.Info("Calling FX API", slog.String("url", url))
+	t.logger.InfoContext(ctx, "Calling FX API", slog.String("url", url))
 
 	// call FX API
 	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, url, constants.GetHTTPMethod)
@@ -73,17 +76,37 @@ func (t *FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.Call
 	exRate, ok1 := data["exchange_rate"].(float64)
 	if !ok1 {
 		t.logger.Error("Invalid type for exchange_rate")
-		return nil, utils.WrapFieldTypeError(t.logger, "exchange_rate")
+		return nil, utils.WrapFieldTypeError(ctx, t.logger, "exchange_rate")
 	}
 
 	converted, ok2 := data["converted_amount"].(float64)
 	if !ok2 {
 		t.logger.Error("Invalid type for converted_amount")
-		return nil, utils.WrapFieldTypeError(t.logger, "converted_amount")
+		return nil, utils.WrapFieldTypeError(ctx, t.logger, "converted_amount")
 	}
 
-	result := fmt.Sprintf("Rate: %.2f, Converted Amount: %.2f", exRate, converted)
-	t.logger.Info("FXTool result ready", slog.String("result", result))
+	// Use rounding function for consistent display
+	formattedExRate := fmath.Round2Decimal(exRate)
+	
+	// If converted amount is in cents, convert to decimal
+	formattedConvertedAmount := 0.0
+	// If the amount looks like cents (large number), convert it to decimal
+	if converted > 100 && params.Amount < 100 {
+		formattedConvertedAmount = money.Int64ToDecimal2(int64(converted))
+	} else {
+		formattedConvertedAmount = fmath.Round2Decimal(converted)
+	}
+	
+	// Format with currency symbols if available
+	fromCurrency := params.From
+	toCurrency := params.To
+	
+	result := fmt.Sprintf(
+		"Exchange Rate: 1 %s = %.2f %s\nConverted Amount: %.2f %s = %.2f %s",
+		fromCurrency, formattedExRate, toCurrency,
+		params.Amount, fromCurrency, formattedConvertedAmount, toCurrency,
+	)
+	t.logger.InfoContext(ctx, "FXTool result ready", slog.String("result", result))
 
 	// return result
 	return &mcp.CallToolResult{
@@ -97,20 +120,20 @@ func (t *FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.Call
 }
 
 // validateAndExtractFXArgs validates request arguments and returns structured parameters
-func validateAndExtractFXArgs(t *FXTool, args map[string]any) (types.FXParams, error) {
+func validateAndExtractFXArgs(t *FXTool, ctx context.Context, args map[string]any) (types.FXParams, error) {
 	var p types.FXParams
 	var ok bool
 
 	if p.Amount, ok = args[constants.FXAmountField].(float64); !ok {
-		return p, utils.WrapFieldTypeError(t.logger, constants.FXAmountField)
+		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.FXAmountField)
 	}
 
 	if p.From, ok = args[constants.FXFromField].(string); !ok {
-		return p, utils.WrapFieldTypeError(t.logger, constants.FXFromField)
+		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.FXFromField)
 	}
 
 	if p.To, ok = args[constants.FXToField].(string); !ok {
-		return p, utils.WrapFieldTypeError(t.logger, constants.FXToField)
+		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.FXToField)
 	}
 
 	return p, nil

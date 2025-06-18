@@ -17,6 +17,6 @@ type BalanceDataBlock struct {
 }
 
 type Balance struct {
-	Amount   string `json:"amount"`
 	Currency string `json:"currency"`
+	Amount   int64  `json:"amount"`
 }
