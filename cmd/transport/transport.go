@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"log/slog"
+	"net/http"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/viper"
@@ -23,14 +24,44 @@ func HandleStdioServer(s *server.MCPServer, logger *slog.Logger) error {
 func HandleStreamableHTTPServer(s *server.MCPServer, logger *slog.Logger) error {
 	// Only log on actual start
 	logger.InfoContext(context.Background(), "Streamable HTTP server started")
+
+	// Create base mux for health check
+	baseMux := http.NewServeMux()
+	baseMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	// Create streamable HTTP server
 	streamServer := server.NewStreamableHTTPServer(s,
 		server.WithEndpointPath("/stream"),
 		server.WithHTTPContextFunc(utils.AuthHeaderHTTPContextFunc),
 	)
-	defer streamServer.Shutdown(context.Background())
+
+	// Create a wrapper handler that handles both health check and stream
+	mainHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			baseMux.ServeHTTP(w, r)
+			return
+		}
+		streamServer.ServeHTTP(w, r)
+	})
+
+	// Create the main HTTP server
+	httpServer := &http.Server{
+		Handler: mainHandler,
+	}
+
+	defer func() {
+		streamServer.Shutdown(context.Background())
+		httpServer.Shutdown(context.Background())
+	}()
+
 	addr := viper.GetString("STREAM_SERVER_ADDR")
 	if addr == "" {
 		addr = ":8081"
 	}
-	return streamServer.Start(addr)
+	httpServer.Addr = addr
+
+	return httpServer.ListenAndServe()
 }

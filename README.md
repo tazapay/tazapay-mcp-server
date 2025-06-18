@@ -141,6 +141,43 @@ Ensure the following tools are installed before setup:
 * Go to: **Settings > MCP > Add New Global MCP Server**
 * Paste the JSON configuration from above and tools are ready to use within the chat. 
 
+## Server Modes and Endpoints
+
+The server can run in two modes:
+
+### 1. Standard I/O Mode (Default)
+Used for direct integration with tools like Claude Desktop and VS Code.
+
+### 2. Streamable HTTP Mode
+When running in HTTP mode (set via `TRANSPORT_TYPE=streamablehttp`), the server exposes these endpoints:
+
+#### Available Endpoints
+
+All endpoints are available on port 8081:
+
+* **MCP Stream**: `http://localhost:8081/stream` - Main MCP protocol endpoint
+* **Health Check**: `http://localhost:8081/healthz` - Server health status endpoint
+
+#### Running in HTTP Mode
+
+```bash
+# Run with streamable HTTP server mode
+docker run --rm -p 8081:8081 \
+  -e TAZAPAY_API_KEY=your_api_key \
+  -e TAZAPAY_API_SECRET=your_api_secret \
+  -e SERVER_TYPE=streamablehttp \
+  tazapay/tazapay-mcp-server:latest
+```
+
+#### Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `SERVER_TYPE` | Server mode (`stdio` or `streamablehttp`) | `stdio` | No |
+| `STREAM_SERVER_ADDR` | HTTP server address | `:8081` | No |
+| `TAZAPAY_API_KEY` | Your Tazapay API key | - | Yes |
+| `TAZAPAY_API_SECRET` | Your Tazapay API secret | - | Yes |
+
 ## License
 
 This project is licensed under the MIT license. Refer to LICENSE for details.
