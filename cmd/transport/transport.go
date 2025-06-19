@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/viper"
@@ -22,12 +23,11 @@ func HandleStdioServer(s *server.MCPServer, logger *slog.Logger) error {
 // It sets up the HTTP server with endpoint path and authentication context, logs the start,
 // and listens on the configured address (default :8081).
 func HandleStreamableHTTPServer(s *server.MCPServer, logger *slog.Logger) error {
-	// Only log on actual start
-	logger.InfoContext(context.Background(), "Streamable HTTP server started")
+	viper.AutomaticEnv()
 
-	// Create base mux for health check
+	// base mux for health check - handle root and any non-stream paths
 	baseMux := http.NewServeMux()
-	baseMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	baseMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
@@ -38,13 +38,13 @@ func HandleStreamableHTTPServer(s *server.MCPServer, logger *slog.Logger) error 
 		server.WithHTTPContextFunc(utils.AuthHeaderHTTPContextFunc),
 	)
 
-	// Create a wrapper handler that handles both health check and stream
+	// Create a wrapper handler that handles health check for all paths except /stream
 	mainHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health" {
-			baseMux.ServeHTTP(w, r)
+		if r.URL.Path == "/stream" {
+			streamServer.ServeHTTP(w, r)
 			return
 		}
-		streamServer.ServeHTTP(w, r)
+		baseMux.ServeHTTP(w, r)
 	})
 
 	// Create the main HTTP server
@@ -57,11 +57,20 @@ func HandleStreamableHTTPServer(s *server.MCPServer, logger *slog.Logger) error 
 		httpServer.Shutdown(context.Background())
 	}()
 
+	// Viper env then fallback to os environment variable, then default
 	addr := viper.GetString("STREAM_SERVER_ADDR")
+	if addr == "" {
+		addr = os.Getenv("STREAM_SERVER_ADDR")
+	}
 	if addr == "" {
 		addr = ":8081"
 	}
 	httpServer.Addr = addr
+
+	// Log the server startup with correct spelling and actual address
+	logger.InfoContext(context.Background(), "HTTP Server started",
+		"running_port_addr", addr,
+		"env_var_input", os.Getenv("STREAM_SERVER_ADDR"))
 
 	return httpServer.ListenAndServe()
 }

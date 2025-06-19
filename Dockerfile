@@ -39,6 +39,7 @@ RUN update-ca-certificates
 ENV LOG_FILE_PATH=/app/logs/app.log
 # Set default server type (can be overridden at runtime)
 ENV TRANSPORT_TYPE=streamablehttp
+ENV STREAM_SERVER_ADDR=:8081
 
 # Ensure the log directory exists (default, but if overridden, user must ensure directory exists)
 RUN mkdir -p /app/logs
