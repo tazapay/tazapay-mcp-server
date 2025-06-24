@@ -46,4 +46,5 @@ const (
 	// string constants for transport types
 	TransportTypeStdio          = "stdio"
 	TransportTypeStreamableHTTP = "streamablehttp"
+	TransportTypeSSE            = "sse"
 )

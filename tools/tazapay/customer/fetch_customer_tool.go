@@ -73,16 +73,23 @@ func (t *FetchCustomerTool) Handle(ctx context.Context, req mcp.CallToolRequest)
 		return nil, err
 	}
 
+	// Marshal the full data for consistent response format
+	fullDataJSON, marshalErr := json.Marshal(data)
+	if marshalErr != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal customer data", "error", marshalErr)
+		return nil, marshalErr
+	}
+
+	// Create summary + full data response like other tools
+	resultText := fmt.Sprintf("Customer ID: %s\nCustomer Name: %s\nCustomer Email: %s\nFull Data: %s",
+		customer.ID,
+		customer.Name,
+		customer.Email,
+		string(fullDataJSON))
+
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{
-			func() mcp.TextContent {
-				jsonBytes, err := json.MarshalIndent(customer, "", "  ")
-				if err != nil {
-					return mcp.TextContent{Type: "text", Text: fmt.Sprintf("Customer: %+v", customer)}
-				}
-
-				return mcp.TextContent{Type: "text", Text: string(jsonBytes)}
-			}(),
+			mcp.TextContent{Type: "text", Text: resultText},
 		},
 	}
 	t.logger.InfoContext(ctx, "Successfully handled FetchCustomerTool request", "result", result)

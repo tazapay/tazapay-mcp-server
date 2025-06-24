@@ -50,6 +50,36 @@ func RegisterTools(s *server.MCPServer, logger *slog.Logger) {
 	}
 }
 
+// RegisterToolsInMap registers all tools in a map for direct access
+func RegisterToolsInMap(toolMap map[string]func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error), logger *slog.Logger) {
+	tools := []types.Tool{
+		balance.NewFXTool(logger),
+		balance.NewBalanceTool(logger),
+		payout.NewGetPayoutTool(logger),
+		payout.NewFundPayoutTool(logger),
+		payout.NewCreatePayoutTool(logger),
+		payin.NewGetPayinTool(logger),
+		payin.NewCreatePayinTool(logger),
+		payin.NewUpdatePayinTool(logger),
+		payin.NewCancelPayinTool(logger),
+		//payin.NewConfirmPayinTool(logger),
+		checkout.NewPaymentLinkTool(logger),
+		checkout.NewFetchCheckoutTool(logger),
+		checkout.NewExpireCheckoutTool(logger),
+		beneficiary.NewGetBeneficiaryTool(logger),
+		beneficiary.NewCreateBeneficiaryTool(logger),
+		beneficiary.NewUpdateBeneficiaryTool(logger),
+		paymentattempt.NewGetPaymentAttemptTool(logger),
+		customer.NewCreateCustomerTool(logger),
+		customer.NewFetchCustomerTool(logger),
+	}
+
+	for _, tool := range tools {
+		definition := tool.Definition()
+		toolMap[definition.Name] = createHandler(tool)
+	}
+}
+
 // registerTool registers a single tool with the server
 func registerTool(s *server.MCPServer, tool types.Tool) {
 	s.AddTool(tool.Definition(), createHandler(tool))

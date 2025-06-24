@@ -74,3 +74,67 @@ func HandleStreamableHTTPServer(s *server.MCPServer, logger *slog.Logger) error 
 
 	return httpServer.ListenAndServe()
 }
+
+// HandleSseServer starts a custom SSE server with custom session management.
+// It does not use server.NewSSEServer from mark3build.
+
+func HandleSseServer(logger *slog.Logger) error {
+	viper.AutomaticEnv()
+
+	// Use own session-based SSE server
+	sseServer := NewMySSEServer()
+
+	// Base mux for health check
+	baseMux := http.NewServeMux()
+	baseMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	mainHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/sse":
+			ctx := utils.AuthHeaderHTTPContextFunc(r.Context(), r)
+			r = r.WithContext(ctx)
+			sseServer.HandleSSE(w, r)
+		case "/message":
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			ctx := utils.AuthHeaderHTTPContextFunc(r.Context(), r)
+			r = r.WithContext(ctx)
+			sseServer.HandleMessage(w, r)
+		case "/execute":
+			ctx := utils.AuthHeaderHTTPContextFunc(r.Context(), r)
+			r = r.WithContext(ctx)
+			sseServer.HandleDirectExecution(w, r)
+		default:
+			baseMux.ServeHTTP(w, r)
+		}
+	})
+
+	httpServer := &http.Server{
+		Handler: mainHandler,
+	}
+
+	defer func() {
+		httpServer.Shutdown(context.Background())
+	}()
+
+	addr := viper.GetString("STREAM_SERVER_ADDR")
+	if addr == "" {
+		addr = os.Getenv("STREAM_SERVER_ADDR")
+	}
+	if addr == "" {
+		addr = ":8081"
+	}
+	httpServer.Addr = addr
+
+	logger.InfoContext(context.Background(), "Custom SSE Server started",
+		"running_port_addr", addr,
+		"env_var_input", os.Getenv("STREAM_SERVER_ADDR"))
+
+	return httpServer.ListenAndServe()
+}

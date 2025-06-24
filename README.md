@@ -156,7 +156,7 @@ When running in HTTP mode (set via `TRANSPORT_TYPE=streamablehttp`), the server 
 All endpoints are available on port 8081:
 
 * **MCP Stream**: `http://localhost:8081/stream` - Main MCP protocol endpoint
-* **Health Check**: `http://localhost:8081/healthz` - Server health status endpoint
+* **Health Check**: `http://localhost:8081/` - Server health status endpoint
 
 #### Running in HTTP Mode
 
@@ -165,7 +165,29 @@ All endpoints are available on port 8081:
 docker run --rm -p 8081:8081 \
   -e TAZAPAY_API_KEY=your_api_key \
   -e TAZAPAY_API_SECRET=your_api_secret \
-  -e SERVER_TYPE=streamablehttp \
+  -e TRANSPORT_TYPE=streamablehttp \
+  tazapay/tazapay-mcp-server:latest
+```
+
+### 3. Server-Sent Events (SSE) Mode
+
+When running in SSE mode (set via `TRANSPORT_TYPE=sse`), the server provides real-time streaming capabilities:
+
+#### SSE Endpoints
+
+All endpoints are available on port 8082:
+
+* **SSE Stream**: `http://localhost:8082/sse` - Server-Sent Events endpoint for real-time streaming
+* **Health Check**: `http://localhost:8082/` - Server health status endpoint
+
+#### Running in SSE Mode
+
+```bash
+# Run with SSE server mode
+docker run --rm -p 8082:8082 \
+  -e TAZAPAY_API_KEY=your_api_key \
+  -e TAZAPAY_API_SECRET=your_api_secret \
+  -e TRANSPORT_TYPE=sse \
   tazapay/tazapay-mcp-server:latest
 ```
 
@@ -173,8 +195,9 @@ docker run --rm -p 8081:8081 \
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `SERVER_TYPE` | Server mode (`stdio` or `streamablehttp`) | `stdio` | No |
+| `TRANSPORT_TYPE` | Server mode (`stdio`, `streamablehttp`, or `sse`) | `streamablehttp` | No |
 | `STREAM_SERVER_ADDR` | HTTP server address | `:8081` | No |
+| `SSE_SERVER_ADDR` | SSE server address | `:8082` | No |
 | `TAZAPAY_API_KEY` | Your Tazapay API key | - | Yes |
 | `TAZAPAY_API_SECRET` | Your Tazapay API secret | - | Yes |
 

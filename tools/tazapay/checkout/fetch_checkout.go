@@ -71,15 +71,30 @@ func (t *FetchCheckoutTool) Handle(ctx context.Context, req mcp.CallToolRequest)
 		data["amount_original"] = amount
 	}
 
-	fullDataJSON, err := json.MarshalIndent(data, "", "  ")
+	// Create structured response with summary and full data
+	summary := "Checkout session details retrieved"
+	if sessionID, ok := data["id"].(string); ok {
+		summary += " for ID: " + sessionID
+	}
+	if status, ok := data["status"].(string); ok {
+		summary += " (Status: " + status + ")"
+	}
+
+	fullDataJSON, err := json.Marshal(data)
 	if err != nil {
 		t.logger.ErrorContext(ctx, "failed to marshal full data for output", "error", err.Error())
-		fullDataJSON = []byte("<failed to marshal data>")
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: summary},
+			},
+		}, nil
 	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(fullDataJSON))
 
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{
-			mcp.TextContent{Type: "text", Text: "Checkout session data: " + string(fullDataJSON)},
+			mcp.TextContent{Type: "text", Text: resultText},
 		},
 	}
 	t.logger.InfoContext(ctx, "Successfully handled FetchCheckoutTool request", "result", result)

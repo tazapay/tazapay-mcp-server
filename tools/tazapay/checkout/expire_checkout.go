@@ -2,6 +2,7 @@ package checkout
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -64,7 +65,21 @@ func (t *ExpireCheckoutTool) Handle(ctx context.Context, req mcp.CallToolRequest
 	}
 
 	status, _ := data["status"].(string)
-	resultText := "Checkout session expired. Status: " + status
+
+	// Create structured response with summary and full data
+	summary := "Checkout session expired. Status: " + status
+
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal data to JSON", "error", err)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: summary},
+			},
+		}, nil
+	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(dataJSON))
 
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{

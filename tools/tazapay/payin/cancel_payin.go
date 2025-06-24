@@ -2,6 +2,7 @@ package payin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -24,7 +25,7 @@ func NewCancelPayinTool(logger *slog.Logger) *CancelPayinTool {
 }
 
 func (t *CancelPayinTool) Definition() mcp.Tool {
-	
+
 	return mcp.NewTool(
 		constants.CancelPayinToolName,
 		mcp.WithDescription(constants.CancelPayinToolDesc),
@@ -76,7 +77,21 @@ func (t *CancelPayinTool) Handle(ctx context.Context, req mcp.CallToolRequest) (
 		t.logger.ErrorContext(ctx, "Missing 'status' in response data", "data", data)
 		return nil, errors.New("missing 'status' in response data")
 	}
-	resultText := "Payin cancelled. Status: " + statusVal.(string)
+
+	// Create structured response with summary and full data
+	summary := "Payin cancelled. Status: " + statusVal.(string)
+
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal data to JSON", "error", err)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: summary},
+			},
+		}, nil
+	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(dataJSON))
 
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{

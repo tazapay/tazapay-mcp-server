@@ -87,15 +87,26 @@ func (t *GetPayoutTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*m
 		data["transactions"] = transactions
 	}
 
-	jsonBytes, err := json.MarshalIndent(data, "", "  ")
+	jsonBytes, err := json.Marshal(data)
 	if err != nil {
 		t.logger.ErrorContext(ctx, "Failed to marshal payout data", "error", err)
 		return nil, err
 	}
 
+	// Create structured response with summary and full data
+	summary := "Payout details retrieved"
+	if payoutID, ok := data["id"].(string); ok {
+		summary += " for ID: " + payoutID
+	}
+	if status, ok := data["status"].(string); ok {
+		summary += " (Status: " + status + ")"
+	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(jsonBytes))
+
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{
-			mcp.TextContent{Type: "text", Text: string(jsonBytes)},
+			mcp.TextContent{Type: "text", Text: resultText},
 		},
 	}
 	t.logger.InfoContext(ctx, "Successfully handled GetPayoutTool request", "result", result)

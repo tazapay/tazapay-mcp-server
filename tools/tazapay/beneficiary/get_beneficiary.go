@@ -84,17 +84,22 @@ func (t *GetBeneficiaryTool) Handle(ctx context.Context, req mcp.CallToolRequest
 		return nil, err
 	}
 
+	// Marshal the full data for consistent response format
+	fullDataJSON, marshalErr := json.Marshal(data)
+	if marshalErr != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal beneficiary data", "error", marshalErr)
+		return nil, marshalErr
+	}
+
+	resultText := fmt.Sprintf("Beneficiary ID: %s\nBeneficiary Name: %s\nBeneficiary Type: %s\nFull Data: %s",
+		beneficiary.ID,
+		beneficiary.Name,
+		beneficiary.Type,
+		string(fullDataJSON))
+
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{
-			// Marshal beneficiary struct to JSON for human-readable output
-			func() mcp.TextContent {
-				jsonBytes, err := json.MarshalIndent(beneficiary, "", "  ")
-				if err != nil {
-					return mcp.TextContent{Type: "text", Text: fmt.Sprintf("Beneficiary: %+v", beneficiary)}
-				}
-
-				return mcp.TextContent{Type: "text", Text: string(jsonBytes)}
-			}(),
+			mcp.TextContent{Type: "text", Text: resultText},
 		},
 	}
 	t.logger.InfoContext(ctx, "Successfully handled GetBeneficiaryTool request", "result", result)

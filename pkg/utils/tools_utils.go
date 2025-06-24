@@ -52,6 +52,55 @@ func GetBalances(data map[string]any, currency string) (string, error) {
 	return output, nil
 }
 
+// GetBalancesWithJSON parses balance data and returns formatted text with JSON data
+// Similar to GetBalances but includes the raw JSON data for consistent API responses
+func GetBalancesWithJSON(data map[string]any, currency string) (string, error) {
+	// Marshal map to JSON bytes
+	raw, err := json.Marshal(data)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal balance data: %w", err)
+	}
+
+	var result types.BalanceResponse
+	// Unmarshal into the BalanceResponse struct
+	if unmarshalErr := json.Unmarshal(raw, &result); unmarshalErr != nil {
+		return "", fmt.Errorf("failed to parse balance response: %w", unmarshalErr)
+	}
+
+	// Ensure data is available
+	if len(result.Data.Available) == 0 {
+		return "No balances found.\nFull Data: " + string(raw), nil
+	}
+
+	var summary string
+	// Normalize currency if provided
+	if currency != "" {
+		currencyCode := strings.ToUpper(currency)
+		for _, balance := range result.Data.Available {
+			if strings.EqualFold(balance.Currency, currencyCode) {
+				amountFloat := money.Int64ToDecimal2(balance.Amount)
+				summary = fmt.Sprintf("%s Balance: %.2f", balance.Currency, amountFloat)
+				break
+			}
+		}
+
+		if summary == "" {
+			summary = "No balance found for currency: " + currencyCode
+		}
+	} else {
+		// Format all balances
+		summary = "Available Account Balances:\n"
+		for _, balance := range result.Data.Available {
+			amountFloat := money.Int64ToDecimal2(balance.Amount)
+			summary += fmt.Sprintf("- %s: %.2f\n", balance.Currency, amountFloat)
+		}
+		summary = strings.TrimSuffix(summary, "\n") // Remove trailing newline
+	}
+
+	// Add the full JSON data
+	return summary + "\nFull Data: " + string(raw), nil
+}
+
 // MapToStruct converts map[string]any to any struct using JSON marshaling.
 // Pass a pointer to the output struct as `out`.
 func MapToStruct(input map[string]any, out any) error {

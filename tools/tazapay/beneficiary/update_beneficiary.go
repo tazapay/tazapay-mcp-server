@@ -2,6 +2,7 @@ package beneficiary
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -148,9 +149,27 @@ func (t *UpdateBeneficiaryTool) Handle(ctx context.Context, req mcp.CallToolRequ
 		return nil, constants.ErrNoDataInResponse
 	}
 
+	// Create structured response with summary and full data
+	summary := "Beneficiary successfully updated"
+	if id, ok := data["id"].(string); ok {
+		summary += " with ID: " + id
+	}
+
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal data to JSON", "error", err)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: summary},
+			},
+		}, nil
+	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(dataJSON))
+
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{
-			mcp.TextContent{Type: "text", Text: fmt.Sprintf("Beneficiary updated: %+v", data)},
+			mcp.TextContent{Type: "text", Text: resultText},
 		},
 	}
 	t.logger.InfoContext(ctx, "Successfully handled UpdateBeneficiaryTool request", "result", result)

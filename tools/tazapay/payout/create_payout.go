@@ -3,6 +3,7 @@ package payout
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -395,7 +396,20 @@ func (t *CreatePayoutTool) createPayoutRequest(ctx context.Context,
 		return nil, constants.ErrNoBeneficiaryID
 	}
 
-	resultText := "Payout created with ID: " + payoutID
+	// Create structured response with summary and full data
+	summary := "Payout created with ID: " + payoutID
+
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal data to JSON", "error", err)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: summary},
+			},
+		}, nil
+	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(dataJSON))
 
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{

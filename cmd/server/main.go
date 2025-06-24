@@ -45,6 +45,11 @@ func main() {
 			logger.ErrorContext(context.Background(), "server exited with error", "error", err)
 			os.Exit(1)
 		}
+	case constants.TransportTypeSSE:
+		if err := transport.HandleSseServer(logger); err != nil {
+			logger.ErrorContext(context.Background(), "server exited with error", "error", err)
+			os.Exit(1)
+		}
 	default:
 		if err := transport.HandleStreamableHTTPServer(s, logger); err != nil {
 			logger.ErrorContext(context.Background(), "server exited with error", "error", err)

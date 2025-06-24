@@ -2,6 +2,7 @@ package payin
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -23,7 +24,7 @@ func NewUpdatePayinTool(logger *slog.Logger) *UpdatePayinTool {
 }
 
 func (t *UpdatePayinTool) Definition() mcp.Tool {
-	
+
 	return mcp.NewTool(
 		"update_payin_tool",
 		mcp.WithDescription("Update a payin on Tazapay without confirming it"),
@@ -94,7 +95,20 @@ func (t *UpdatePayinTool) Handle(ctx context.Context, req mcp.CallToolRequest) (
 		return nil, constants.ErrNoDataInResponse
 	}
 
-	resultText := "Payin updated. Status: " + status
+	// Create structured response with summary and full data
+	summary := "Payin updated. Status: " + status
+
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal data to JSON", "error", err)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: summary},
+			},
+		}, nil
+	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(dataJSON))
 
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{

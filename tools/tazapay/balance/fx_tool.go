@@ -2,6 +2,7 @@ package balance
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -87,7 +88,7 @@ func (t *FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.Call
 
 	// Use rounding function for consistent display
 	formattedExRate := fmath.Round2Decimal(exRate)
-	
+
 	// If converted amount is in cents, convert to decimal
 	formattedConvertedAmount := 0.0
 	// If the amount looks like cents (large number), convert it to decimal
@@ -96,15 +97,23 @@ func (t *FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.Call
 	} else {
 		formattedConvertedAmount = fmath.Round2Decimal(converted)
 	}
-	
+
 	// Format with currency symbols if available
 	fromCurrency := params.From
 	toCurrency := params.To
-	
+
+	// Marshal the full response data for consistency
+	fullDataJSON, marshalErr := json.Marshal(data)
+	if marshalErr != nil {
+		t.logger.Error("Failed to marshal FX response data", slog.String("error", marshalErr.Error()))
+		return nil, marshalErr
+	}
+
 	result := fmt.Sprintf(
-		"Exchange Rate: 1 %s = %.2f %s\nConverted Amount: %.2f %s = %.2f %s",
+		"Exchange Rate: 1 %s = %.2f %s\nConverted Amount: %.2f %s = %.2f %s\nFull Data: %s",
 		fromCurrency, formattedExRate, toCurrency,
 		params.Amount, fromCurrency, formattedConvertedAmount, toCurrency,
+		string(fullDataJSON),
 	)
 	t.logger.InfoContext(ctx, "FXTool result ready", slog.String("result", result))
 

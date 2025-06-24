@@ -71,16 +71,27 @@ func (t *GetPaymentAttemptTool) Handle(ctx context.Context, req mcp.CallToolRequ
 		data["amount_original"] = amount
 	}
 
-	// Format the data as pretty JSON
-	jsonBytes, err := json.MarshalIndent(data, "", "  ")
+	// Create structured response with summary and full data
+	summary := "Payment attempt details retrieved"
+	if attemptID, ok := data["id"].(string); ok {
+		summary += " for ID: " + attemptID
+	}
+	if status, ok := data["status"].(string); ok {
+		summary += " (Status: " + status + ")"
+	}
+
+	// Format the data as compact JSON
+	jsonBytes, err := json.Marshal(data)
 	if err != nil {
 		t.logger.ErrorContext(ctx, "Failed to marshal payment attempt data", "error", err)
 		return nil, err
 	}
 
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(jsonBytes))
+
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{
-			mcp.TextContent{Type: "text", Text: string(jsonBytes)},
+			mcp.TextContent{Type: "text", Text: resultText},
 		},
 	}
 	t.logger.InfoContext(ctx, "Successfully handled GetPaymentAttemptTool request", "result", result)

@@ -2,6 +2,7 @@ package payout
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -72,7 +73,8 @@ func (t *FundPayoutTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*
 		return nil, constants.ErrNoStatusInFundPayoutData
 	}
 
-	resultText := "Payout funded. Status: " + status
+	// Create structured response with summary and full data
+	summary := "Payout funded. Status: " + status
 
 	// Convert amount from cents to decimal value if present
 	if amount, exists := data["amount"].(float64); exists {
@@ -80,11 +82,23 @@ func (t *FundPayoutTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*
 		amountValue := money.Int64ToDecimal2(int64(amount))
 
 		if hasCurrency {
-			resultText += fmt.Sprintf("\nAmount: %s %.2f", currency, amountValue)
+			summary += fmt.Sprintf("\nAmount: %s %.2f", currency, amountValue)
 		} else {
-			resultText += fmt.Sprintf("\nAmount: %.2f", amountValue)
+			summary += fmt.Sprintf("\nAmount: %.2f", amountValue)
 		}
 	}
+
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal data to JSON", "error", err)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: summary},
+			},
+		}, nil
+	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(dataJSON))
 
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{

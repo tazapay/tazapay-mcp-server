@@ -71,16 +71,27 @@ func (t *GetPayinTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mc
 		data["amount_original"] = amount
 	}
 
-	// Marshal the data to pretty JSON
-	jsonBytes, err := json.MarshalIndent(data, "", "  ")
+	// Marshal the data to compact JSON for the Full Data section
+	jsonBytes, err := json.Marshal(data)
 	if err != nil {
 		t.logger.ErrorContext(ctx, "Failed to marshal payin data to JSON", "error", err)
 		return nil, err
 	}
 
+	// Create structured response with summary and full data
+	summary := "Payin details retrieved"
+	if payinID, ok := data["id"].(string); ok {
+		summary += " for ID: " + payinID
+	}
+	if status, ok := data["status"].(string); ok {
+		summary += " (Status: " + status + ")"
+	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(jsonBytes))
+
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{
-			mcp.TextContent{Type: "text", Text: string(jsonBytes)},
+			mcp.TextContent{Type: "text", Text: resultText},
 		},
 	}
 	t.logger.InfoContext(ctx, "Successfully handled GetPayinTool request", "result", result)

@@ -2,7 +2,9 @@ package payin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -203,7 +205,20 @@ func (t *CreatePayinTool) Handle(ctx context.Context, req mcp.CallToolRequest) (
 		return nil, errors.New("no payin ID in response")
 	}
 
-	resultText := "Payin created with ID: " + payinID
+	// Create structured response with summary and full data
+	summary := "Payin created with ID: " + payinID
+
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal data to JSON", "error", err)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: summary},
+			},
+		}, nil
+	}
+
+	resultText := fmt.Sprintf("%s\nFull Data: %s", summary, string(dataJSON))
 
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{

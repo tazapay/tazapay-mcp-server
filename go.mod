@@ -3,6 +3,7 @@ module github.com/tazapay/tazapay-mcp-server
 go 1.24.2
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/mark3labs/mcp-go v0.31.0
 	github.com/spf13/viper v1.20.1
 )
@@ -10,7 +11,6 @@ require (
 require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/sagikazarmark/locafero v0.9.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect

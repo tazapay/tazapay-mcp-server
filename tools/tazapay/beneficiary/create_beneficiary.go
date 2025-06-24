@@ -2,6 +2,8 @@ package beneficiary
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -320,10 +322,18 @@ func (t *CreateBeneficiaryTool) Handle(ctx context.Context, req mcp.CallToolRequ
 	// Optionally, you can include the destination as well
 	destinationID, _ := data["destination"].(string)
 
-	resultText := "Beneficiary created with ID: " + beneficiaryID
-	if destinationID != "" {
-		resultText += ", destinationID: " + destinationID
+	// Marshal the full data for consistent response format
+	fullDataJSON, err := json.Marshal(data)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Failed to marshal beneficiary data", "error", err)
+		return nil, err
 	}
+
+	resultText := fmt.Sprintf("Beneficiary ID: %s", beneficiaryID)
+	if destinationID != "" {
+		resultText += fmt.Sprintf("\nDestination ID: %s", destinationID)
+	}
+	resultText += fmt.Sprintf("\nFull Data: %s", string(fullDataJSON))
 
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{

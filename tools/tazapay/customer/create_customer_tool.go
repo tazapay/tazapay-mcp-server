@@ -3,6 +3,7 @@ package customer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -100,7 +101,11 @@ func (t *CreateCustomerTool) Handle(ctx context.Context, req mcp.CallToolRequest
 		return nil, err
 	}
 
-	resultText := "Customer created with ID: " + customer.ID + ", name: " + customer.Name
+	// Format response with summary and full data like payment_link_tool
+	resultText := fmt.Sprintf("Customer ID: %s\nCustomer Name: %s\nFull Data: %s",
+		customer.ID,
+		customer.Name,
+		string(jsonData))
 
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{

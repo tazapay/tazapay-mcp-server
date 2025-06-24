@@ -66,7 +66,7 @@ func (t *BalanceTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp
 		return nil, fmt.Errorf("failed to get balance: %w", err)
 	}
 
-	text, err := utils.GetBalances(resp, currency)
+	text, err := utils.GetBalancesWithJSON(resp, currency)
 	if err != nil {
 		return nil, err
 	}
