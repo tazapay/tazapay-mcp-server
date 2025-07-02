@@ -33,7 +33,7 @@ func (*PaymentLinkTool) Definition() mcp.Tool {
 	return mcp.NewTool(
 		constants.PaymentLinkToolName,
 		mcp.WithDescription(constants.PaymentLinkToolDesc),
-		mcp.WithString(constants.InvoiceCurrencyField, mcp.Required(), mcp.Description("Currency in which the invoice is to be raised (in uppercase, ISO-4217 standard, e.g., USD, EUR)")),
+		mcp.WithString(constants.InvoiceCurrencyField, mcp.Required(), mcp.Description("Currency in which the invoice is to be raised (case insensitive, ISO-4217 standard, e.g., USD, eur, gbp)")),
 		mcp.WithNumber(constants.PaymentAmountField, mcp.Required(), mcp.Description(constants.PaymentAmountDesc)),
 		mcp.WithString(constants.CustomerNameField, mcp.Required(), mcp.Description(constants.CustomerNameDesc)),
 		mcp.WithString(constants.CustomerEmailField, mcp.Required(),
@@ -124,9 +124,18 @@ func validateAndExtractArgs(ctx context.Context, t *PaymentLinkTool, args map[st
 		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.PaymentAmountField)
 	}
 
-	if p.InvoiceCurrency, ok = args[constants.InvoiceCurrencyField].(string); !ok {
+	invoiceCurrency, ok := args[constants.InvoiceCurrencyField].(string)
+	if !ok {
 		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.InvoiceCurrencyField)
 	}
+
+	// Normalize and validate currency
+	normalizedCurrency, err := utils.NormalizeCurrency(invoiceCurrency)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Invalid invoice currency", "currency", invoiceCurrency, "error", err)
+		return p, fmt.Errorf("invalid invoice currency: %w", err)
+	}
+	p.InvoiceCurrency = normalizedCurrency
 
 	if p.Description, ok = args[constants.TransactionDescField].(string); !ok {
 		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.TransactionDescField)
@@ -142,10 +151,6 @@ func validateAndExtractArgs(ctx context.Context, t *PaymentLinkTool, args map[st
 
 	if p.CustomerCountry, ok = args[constants.CustomerCountryField].(string); !ok {
 		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.CustomerCountryField)
-	}
-
-	if err := utils.ValidateCurrency(p.InvoiceCurrency); err != nil {
-		return p, err
 	}
 
 	if err := utils.ValidateCountry(p.CustomerCountry); err != nil {

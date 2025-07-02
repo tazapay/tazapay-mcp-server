@@ -53,7 +53,7 @@ func (t *FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.Call
 	}
 
 	// construct URL for API call
-	amountInt := int(fmath.Round2Decimal(params.Amount * 100))
+	amountInt := int(money.Decimal2ToInt64(params.Amount))
 	url := fmt.Sprintf("%s?initial_currency=%s&final_currency=%s&amount=%d",
 		constants.PaymentFxBaseURLProd, params.From, params.To, amountInt)
 
@@ -87,20 +87,14 @@ func (t *FXTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.Call
 
 	// Use rounding function for consistent display
 	formattedExRate := fmath.Round2Decimal(exRate)
-	
-	// If converted amount is in cents, convert to decimal
-	formattedConvertedAmount := 0.0
-	// If the amount looks like cents (large number), convert it to decimal
-	if converted > 100 && params.Amount < 100 {
-		formattedConvertedAmount = money.Int64ToDecimal2(int64(converted))
-	} else {
-		formattedConvertedAmount = fmath.Round2Decimal(converted)
-	}
-	
+
+	// The API always returns converted_amount in cents, so convert to decimal
+	formattedConvertedAmount := money.Int64ToDecimal2(int64(converted))
+
 	// Format with currency symbols if available
 	fromCurrency := params.From
 	toCurrency := params.To
-	
+
 	result := fmt.Sprintf(
 		"Exchange Rate: 1 %s = %.2f %s\nConverted Amount: %.2f %s = %.2f %s",
 		fromCurrency, formattedExRate, toCurrency,
@@ -128,13 +122,31 @@ func validateAndExtractFXArgs(t *FXTool, ctx context.Context, args map[string]an
 		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.FXAmountField)
 	}
 
-	if p.From, ok = args[constants.FXFromField].(string); !ok {
+	fromCurrency, ok := args[constants.FXFromField].(string)
+	if !ok {
 		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.FXFromField)
 	}
 
-	if p.To, ok = args[constants.FXToField].(string); !ok {
+	// Normalize and validate from currency
+	normalizedFrom, err := utils.NormalizeCurrency(fromCurrency)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Invalid from currency", "currency", fromCurrency, "error", err)
+		return p, fmt.Errorf("invalid from currency: %w", err)
+	}
+	p.From = normalizedFrom
+
+	toCurrency, ok := args[constants.FXToField].(string)
+	if !ok {
 		return p, utils.WrapFieldTypeError(ctx, t.logger, constants.FXToField)
 	}
+
+	// Normalize and validate to currency
+	normalizedTo, err := utils.NormalizeCurrency(toCurrency)
+	if err != nil {
+		t.logger.ErrorContext(ctx, "Invalid to currency", "currency", toCurrency, "error", err)
+		return p, fmt.Errorf("invalid to currency: %w", err)
+	}
+	p.To = normalizedTo
 
 	return p, nil
 }

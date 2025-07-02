@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 
@@ -52,11 +51,13 @@ func (t *BalanceTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	// If empty string, fetch all balances
 	if len(currency) == 0 {
 		currency = ""
-	} else if len(currency) == 3 {
-		// Convert to uppercase if needed
-		currency = strings.ToUpper(currency)
 	} else {
-		return nil, errors.New("currency must be 3 letters (e.g., USD, INR) or empty to fetch all balances")
+		// Normalize and validate currency
+		normalizedCurrency, err := utils.NormalizeCurrency(currency)
+		if err != nil {
+			return nil, fmt.Errorf("invalid currency: %w", err)
+		}
+		currency = normalizedCurrency
 	}
 
 	t.logger.Info("handling balance tool request", slog.Any("args", args))

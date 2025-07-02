@@ -36,12 +36,12 @@ func newCreatePayoutToolSchema() mcp.Tool {
 		mcp.WithNumber(
 			"amount",
 			mcp.Required(),
-			mcp.Description("Amount in cents. For example, $10.12 should be 1012."),
+			mcp.Description("Amount in decimal format. For example, $10.12 should be 10.12."),
 		),
 		mcp.WithString(
 			"currency",
 			mcp.Required(),
-			mcp.Description("ISO 4217 standard. This is the payout currency."),
+			mcp.Description("ISO 4217 standard. This is the payout currency (case insensitive, e.g., USD, eur, gbp)."),
 		),
 		mcp.WithString(
 			constants.KeyPurpose,
@@ -467,10 +467,15 @@ func validateCurrencyField(ctx context.Context, data map[string]any, logger *slo
 		return nil
 	}
 
-	if err := utils.ValidateCurrency(currency); err != nil {
-		logger.ErrorContext(ctx, err.Error())
+	// Normalize and validate currency
+	normalizedCurrency, err := utils.NormalizeCurrency(currency)
+	if err != nil {
+		logger.ErrorContext(ctx, "Invalid currency", "currency", currency, "error", err)
 		return err
 	}
+
+	// Update the data with normalized currency
+	data[constants.KeyCurrency] = normalizedCurrency
 
 	return nil
 }

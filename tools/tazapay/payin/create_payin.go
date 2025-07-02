@@ -3,6 +3,7 @@ package payin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -28,7 +29,7 @@ func (t *CreatePayinTool) Definition() mcp.Tool {
 	return mcp.NewTool(
 		"create_payin_tool",
 		mcp.WithDescription("Create and confirm a payin on Tazapay"),
-		mcp.WithString("invoice_currency", mcp.Required(), mcp.Description("Currency in which the invoice is to be raised (in uppercase, ISO-4217 standard, e.g., USD, EUR)")),
+		mcp.WithString("invoice_currency", mcp.Required(), mcp.Description("Currency in which the invoice is to be raised (case insensitive, ISO-4217 standard, e.g., USD, eur, gbp)")),
 		mcp.WithNumber("amount", mcp.Required()),
 		mcp.WithObject("customer_details", mcp.Required(),
 			mcp.Properties(map[string]any{
@@ -117,12 +118,14 @@ func (t *CreatePayinTool) Handle(ctx context.Context, req mcp.CallToolRequest) (
 		}
 	}()
 
-	// Validate currency
+	// Validate and normalize currency
 	if currency, ok := args["invoice_currency"].(string); ok && currency != "" {
-		if err := utils.ValidateCurrency(currency); err != nil {
-			t.logger.ErrorContext(ctx, err.Error())
-			return nil, err
+		normalizedCurrency, err := utils.NormalizeCurrency(currency)
+		if err != nil {
+			t.logger.ErrorContext(ctx, "Invalid invoice currency", "currency", currency, "error", err)
+			return nil, fmt.Errorf("invalid invoice currency: %w", err)
 		}
+		args["invoice_currency"] = normalizedCurrency
 	}
 	// Validate country in customer_details if present
 	if customerDetails, ok := args["customer_details"].(map[string]any); ok {

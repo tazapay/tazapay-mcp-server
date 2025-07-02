@@ -33,3 +33,20 @@ func ValidatePrefixID(prefix, id string) error {
 
 	return nil
 }
+
+// NormalizeCurrency normalizes currency input by converting to uppercase and validating format
+func NormalizeCurrency(currency string) (string, error) {
+	if len(currency) == 0 {
+		return "", fmt.Errorf("%w: currency cannot be empty", constants.ErrInvalidCurrencyFormat)
+	}
+
+	// Convert to uppercase for consistency
+	normalized := strings.ToUpper(strings.TrimSpace(currency))
+
+	// Validate the normalized currency
+	if err := ValidateCurrency(normalized); err != nil {
+		return "", err
+	}
+
+	return normalized, nil
+}

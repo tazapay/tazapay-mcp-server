@@ -126,8 +126,7 @@ func HandleGETHttpRequest(ctx context.Context, logger *slog.Logger,
 ) (map[string]any, error) {
 	headers := getRequestHeaders()
 
-	logger.InfoContext(ctx, "Sending GET request",
-		slog.Any("headers", headers))
+	logger.InfoContext(ctx, "Sending GET request")
 
 	req, err := http.NewRequestWithContext(ctx, method, url, http.NoBody)
 	if err != nil {

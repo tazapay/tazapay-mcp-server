@@ -130,6 +130,31 @@ func (t *UpdateBeneficiaryTool) Handle(ctx context.Context, req mcp.CallToolRequ
 		return nil, err
 	}
 
+	// Normalize currency fields in destination_details if present
+	if dest, ok := args["destination_details"].(map[string]any); ok {
+		if bank, ok := dest["bank"].(map[string]any); ok {
+			if currency, ok := bank["currency"].(string); ok && currency != "" {
+				normalizedCurrency, err := utils.NormalizeCurrency(currency)
+				if err != nil {
+					t.logger.ErrorContext(ctx, "Invalid bank currency", "currency", currency, "error", err)
+					return nil, fmt.Errorf("invalid bank currency: %w", err)
+				}
+				bank["currency"] = normalizedCurrency
+			}
+		}
+
+		if wallet, ok := dest["wallet"].(map[string]any); ok {
+			if currency, ok := wallet["currency"].(string); ok && currency != "" {
+				normalizedCurrency, err := utils.NormalizeCurrency(currency)
+				if err != nil {
+					t.logger.ErrorContext(ctx, "Invalid wallet currency", "currency", currency, "error", err)
+					return nil, fmt.Errorf("invalid wallet currency: %w", err)
+				}
+				wallet["currency"] = normalizedCurrency
+			}
+		}
+	}
+
 	// Remove id from args for payload
 	delete(args, "id")
 	payload := args

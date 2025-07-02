@@ -2,6 +2,7 @@ package beneficiary
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -265,10 +266,12 @@ func (t *CreateBeneficiaryTool) Handle(ctx context.Context, req mcp.CallToolRequ
 	if dest, ok := args[constants.BeneficiaryDestinationDetailsField].(map[string]any); ok {
 		if bank, ok := dest["bank"].(map[string]any); ok {
 			if currency, ok := bank["currency"].(string); ok && currency != "" {
-				if err := utils.ValidateCurrency(currency); err != nil {
-					t.logger.ErrorContext(ctx, err.Error())
-					return nil, err
+				normalizedCurrency, err := utils.NormalizeCurrency(currency)
+				if err != nil {
+					t.logger.ErrorContext(ctx, "Invalid bank currency", "currency", currency, "error", err)
+					return nil, fmt.Errorf("invalid bank currency: %w", err)
 				}
+				bank["currency"] = normalizedCurrency
 			}
 
 			if country, ok := bank["country"].(string); ok && country != "" {
@@ -281,10 +284,12 @@ func (t *CreateBeneficiaryTool) Handle(ctx context.Context, req mcp.CallToolRequ
 
 		if wallet, ok := dest["wallet"].(map[string]any); ok {
 			if currency, ok := wallet["currency"].(string); ok && currency != "" {
-				if err := utils.ValidateCurrency(currency); err != nil {
-					t.logger.ErrorContext(ctx, err.Error())
-					return nil, err
+				normalizedCurrency, err := utils.NormalizeCurrency(currency)
+				if err != nil {
+					t.logger.ErrorContext(ctx, "Invalid wallet currency", "currency", currency, "error", err)
+					return nil, fmt.Errorf("invalid wallet currency: %w", err)
 				}
+				wallet["currency"] = normalizedCurrency
 			}
 		}
 	}
