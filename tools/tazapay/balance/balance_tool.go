@@ -1,11 +1,13 @@
-package tazapay
+package balance
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
+
 	"github.com/tazapay/tazapay-mcp-server/constants"
 	"github.com/tazapay/tazapay-mcp-server/pkg/utils"
 )
@@ -17,6 +19,8 @@ type BalanceTool struct {
 
 // NewBalanceTool creates a new balance tool
 func NewBalanceTool(logger *slog.Logger) *BalanceTool {
+	logger.InfoContext(context.Background(), "Registering Balance_Tool")
+
 	return &BalanceTool{
 		logger: logger,
 	}
@@ -24,6 +28,7 @@ func NewBalanceTool(logger *slog.Logger) *BalanceTool {
 
 // Definition returns the tool definition
 func (t *BalanceTool) Definition() mcp.Tool {
+
 	return mcp.NewTool(
 		constants.BalanceToolName,
 		mcp.WithDescription(constants.BalanceToolDesc),
@@ -33,11 +38,31 @@ func (t *BalanceTool) Definition() mcp.Tool {
 
 // Handle processes tool requests
 func (t *BalanceTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	args := req.Params.Arguments
-	currency, _ := args["currency"].(string)
+	args, ok := req.Params.Arguments.(map[string]any)
+	if !ok {
+		return nil, errors.New("invalid arguments type")
+	}
 
-	path := constants.BalancePath
-	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, constants.BalanceBaseURLProd+path, constants.GetHTTPMethod)
+	currency, ok := args["currency"].(string)
+	if !ok {
+		return nil, errors.New("currency parameter missing or not a string")
+	}
+
+	// If empty string, fetch all balances
+	if len(currency) == 0 {
+		currency = ""
+	} else {
+		// Normalize and validate currency
+		normalizedCurrency, err := utils.NormalizeCurrency(currency)
+		if err != nil {
+			return nil, fmt.Errorf("invalid currency: %w", err)
+		}
+		currency = normalizedCurrency
+	}
+
+	t.logger.Info("handling balance tool request", slog.Any("args", args))
+
+	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, constants.BalanceBaseURLProd, constants.GetHTTPMethod)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get balance: %w", err)
 	}

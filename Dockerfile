@@ -28,24 +28,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Fetch and store the certificate
-RUN echo | openssl s_client -showcerts -connect api-orange.tazapay.com:443 2>/dev/null \
+RUN echo | openssl s_client -showcerts -connect service.tazapay.com:443 2>/dev/null \
     | awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/ { print }' \
     > /usr/local/share/ca-certificates/tazapay.crt
 
 # Update CA trust store
 RUN update-ca-certificates
 
-# Set default log file path (can be overridden during runtime)
+# Set default log file path (can be overridden during runtime with -e LOG_FILE_PATH=/your/path.log)
 ENV LOG_FILE_PATH=/app/logs/app.log
+# Set default server type (can be overridden at runtime)
+ENV TRANSPORT_TYPE=streamablehttp
+ENV STREAM_SERVER_ADDR=:8081
 
-# Ensure the log directory exists
+# Ensure the log directory exists (default, but if overridden, user must ensure directory exists)
 RUN mkdir -p /app/logs
-
-# Optional: Final CMD
-CMD ["bash"]
 
 # Copy the compiled Go binary from the builder stage
 COPY --from=builder /app/tazapay-mcp-server .
 
-# Run the binary on container start
-ENTRYPOINT ["/app/tazapay-mcp-server"]
+# Entrypoint (can be overridden to pass env vars)
+CMD ["/app/tazapay-mcp-server"]
