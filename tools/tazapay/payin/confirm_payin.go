@@ -80,7 +80,7 @@ func (t *ConfirmPayinTool) Handle(ctx context.Context,
 	delete(args, "id")
 	payload := args
 
-	url := fmt.Sprintf("%s/payin/%s/confirm", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/payin/%s/confirm", constants.GetBaseURL(), id)
 
 	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, url, payload, constants.PostHTTPMethod)
 	if err != nil {

@@ -376,7 +376,7 @@ func (t *CreatePayoutTool) processPayoutWithDetails(ctx context.Context,
 func (t *CreatePayoutTool) createPayoutRequest(ctx context.Context,
 	payload any,
 ) (*mcp.CallToolResult, error) {
-	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, constants.CreatePayoutAPIURL,
+	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, constants.GetPayoutAPIURL(),
 		payload, constants.PostHTTPMethod)
 	if err != nil {
 		t.logger.ErrorContext(ctx, "Failed to create payout", constants.KeyError, err)

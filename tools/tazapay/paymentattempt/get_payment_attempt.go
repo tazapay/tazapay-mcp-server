@@ -51,7 +51,7 @@ func (t *GetPaymentAttemptTool) Handle(ctx context.Context, req mcp.CallToolRequ
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/payment_attempt/%s", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/payment_attempt/%s", constants.GetBaseURL(), id)
 
 	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, url, nil, constants.GetHTTPMethod)
 	if err != nil {

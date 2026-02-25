@@ -188,7 +188,7 @@ func (t *CreatePayinTool) Handle(ctx context.Context, req mcp.CallToolRequest) (
 		}
 	}
 
-	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, constants.CreatePayinAPIURL, payload, constants.PostHTTPMethod)
+	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, constants.GetPayinAPIURL(), payload, constants.PostHTTPMethod)
 	if err != nil {
 		t.logger.ErrorContext(ctx, "Failed to create payin", "error", err)
 		return nil, err

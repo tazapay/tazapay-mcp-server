@@ -51,7 +51,7 @@ func (t *GetPayinTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mc
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/payin/%s", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/payin/%s", constants.GetBaseURL(), id)
 
 	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, url, constants.GetHTTPMethod)
 	if err != nil {

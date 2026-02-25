@@ -59,7 +59,7 @@ func (t *GetBeneficiaryTool) Handle(ctx context.Context, req mcp.CallToolRequest
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/beneficiary/%s", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/beneficiary/%s", constants.GetBaseURL(), id)
 
 	t.logger.Debug("URL", "url", url)
 

@@ -53,7 +53,7 @@ func (t *GetPayoutTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*m
 		return nil, constants.ErrMissingOrInvalidPayoutID
 	}
 
-	url := fmt.Sprintf("%s/payout/%s", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/payout/%s", constants.GetBaseURL(), id)
 
 	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, url, constants.GetHTTPMethod)
 	if err != nil {

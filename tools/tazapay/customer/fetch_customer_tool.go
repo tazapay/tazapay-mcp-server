@@ -51,7 +51,7 @@ func (t *FetchCustomerTool) Handle(ctx context.Context, req mcp.CallToolRequest)
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/customer/%s", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/customer/%s", constants.GetBaseURL(), id)
 
 	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, url, "GET")
 	if err != nil {

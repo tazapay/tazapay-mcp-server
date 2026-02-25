@@ -62,7 +62,7 @@ func (t *BalanceTool) Handle(ctx context.Context, req mcp.CallToolRequest) (*mcp
 
 	t.logger.Info("handling balance tool request", slog.Any("args", args))
 
-	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, constants.BalanceBaseURLProd, constants.GetHTTPMethod)
+	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, constants.GetBalanceBaseURL(), constants.GetHTTPMethod)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get balance: %w", err)
 	}

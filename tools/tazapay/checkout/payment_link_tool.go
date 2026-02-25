@@ -63,7 +63,7 @@ func (t *PaymentLinkTool) Handle(ctx context.Context, req mcp.CallToolRequest) (
 	payload := NewPaymentLinkRequest(&params)
 	t.logger.InfoContext(ctx, "constructed payment link payload", slog.Any("payload", payload))
 
-	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, constants.PaymentLinkBaseURLProd,
+	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, constants.GetPaymentLinkBaseURL(),
 		payload, constants.PostHTTPMethod)
 	if err != nil {
 		t.logger.ErrorContext(ctx, "payment link API call failed", slog.String("error", err.Error()))

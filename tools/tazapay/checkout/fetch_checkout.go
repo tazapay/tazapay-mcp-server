@@ -51,7 +51,7 @@ func (t *FetchCheckoutTool) Handle(ctx context.Context, req mcp.CallToolRequest)
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/checkout/%s", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/checkout/%s", constants.GetBaseURL(), id)
 
 	resp, err := utils.HandleGETHttpRequest(ctx, t.logger, url, constants.GetHTTPMethod)
 	if err != nil {

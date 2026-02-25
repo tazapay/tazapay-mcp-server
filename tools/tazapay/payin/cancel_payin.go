@@ -57,7 +57,7 @@ func (t *CancelPayinTool) Handle(ctx context.Context, req mcp.CallToolRequest) (
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/payin/%s/cancel", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/payin/%s/cancel", constants.GetBaseURL(), id)
 
 	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, url, nil, constants.PostHTTPMethod)
 	if err != nil {
