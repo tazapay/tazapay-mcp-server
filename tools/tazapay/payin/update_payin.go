@@ -74,7 +74,7 @@ func (t *UpdatePayinTool) Handle(ctx context.Context, req mcp.CallToolRequest) (
 	delete(args, "id") // no error to check for delete in Go, safe to ignore
 	payload := args
 
-	url := fmt.Sprintf("%s/payin/%s", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/payin/%s", constants.GetBaseURL(), id)
 
 	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, url, payload, constants.PutHTTPMethod)
 	if err != nil {

@@ -45,6 +45,12 @@ func InitConfig(logger *slog.Logger) error {
 	authToken := base64.StdEncoding.EncodeToString([]byte(authString))
 	viper.Set("TAZAPAY_AUTH_TOKEN", authToken)
 
+	// Set custom base URL if provided (e.g. sandbox)
+	if baseURL := viper.GetString("TAZAPAY_BASE_URL"); baseURL != "" {
+		constants.SetBaseURL(baseURL)
+		logger.InfoContext(context.Background(), "Using custom base URL", "base_url", baseURL)
+	}
+
 	logger.InfoContext(context.Background(), "Configuration initialized")
 
 	return nil

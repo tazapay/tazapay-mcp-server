@@ -159,7 +159,7 @@ func (t *UpdateBeneficiaryTool) Handle(ctx context.Context, req mcp.CallToolRequ
 	delete(args, "id")
 	payload := args
 
-	url := fmt.Sprintf("%s/beneficiary/%s", constants.ProdBaseURL, id)
+	url := fmt.Sprintf("%s/beneficiary/%s", constants.GetBaseURL(), id)
 
 	resp, err := utils.HandlePUTHttpRequest(ctx, t.logger, url, payload, constants.PutHTTPMethod)
 	if err != nil {

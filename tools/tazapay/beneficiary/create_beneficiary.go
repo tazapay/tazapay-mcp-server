@@ -303,7 +303,7 @@ func (t *CreateBeneficiaryTool) Handle(ctx context.Context, req mcp.CallToolRequ
 		}
 	}
 
-	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, constants.CreateBeneficiaryAPIURL, payload, constants.PostHTTPMethod)
+	resp, err := utils.HandlePOSTHttpRequest(ctx, t.logger, constants.GetBeneficiaryAPIURL(), payload, constants.PostHTTPMethod)
 	if err != nil {
 		t.logger.ErrorContext(ctx, "Failed to create beneficiary", "error", err)
 		return nil, err

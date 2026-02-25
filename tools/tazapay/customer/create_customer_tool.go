@@ -74,7 +74,7 @@ func (t *CreateCustomerTool) Handle(ctx context.Context, req mcp.CallToolRequest
 		}
 	}()
 
-	url := constants.ProdBaseURL + "/customer"
+	url := constants.GetBaseURL() + "/customer"
 
 	resultMap, err := utils.HandlePOSTHttpRequest(ctx, t.logger, url, args, constants.PostHTTPMethod)
 	if err != nil {
