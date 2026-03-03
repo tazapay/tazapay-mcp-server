@@ -130,3 +130,13 @@ const (
 	CancelPayinIDField  = "id"
 	CancelPayinIDDesc   = "ID of the already created payin to cancel"
 )
+
+// Confirm Payout Tool constants
+const (
+	ConfirmPayoutToolName    = "tazapay_confirm_payout_tool"
+	ConfirmPayoutToolDesc    = "Confirm a payout by attaching a funding source on Tazapay"
+	ConfirmPayoutIDField     = "id"
+	ConfirmPayoutIDDesc      = "ID of the payout to confirm"
+	ConfirmPayoutSourceField = "source"
+	ConfirmPayoutSourceDesc  = "Funding source ID used to fund the payout (e.g., collection ID or balance ID) to confirm"
+)

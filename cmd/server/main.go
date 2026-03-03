@@ -10,6 +10,7 @@ import (
 	"github.com/tazapay/tazapay-mcp-server/cmd/transport"
 	"github.com/tazapay/tazapay-mcp-server/constants"
 	"github.com/tazapay/tazapay-mcp-server/pkg/log"
+	"github.com/tazapay/tazapay-mcp-server/pkg/utils"
 	tools "github.com/tazapay/tazapay-mcp-server/tools/register"
 )
 
@@ -28,6 +29,11 @@ func main() {
 	// create logger
 	logger, _, logErr := log.New(logConfig)
 	if logErr != nil {
+		os.Exit(1)
+	}
+
+	if err := utils.InitConfig(logger); err != nil {
+		logger.ErrorContext(context.Background(), "failed to initialize config", "error", err)
 		os.Exit(1)
 	}
 
