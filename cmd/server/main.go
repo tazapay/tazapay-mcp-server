@@ -32,9 +32,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := utils.InitConfig(logger); err != nil {
-		logger.ErrorContext(context.Background(), "failed to initialize config", "error", err)
-		os.Exit(1)
+	if transportType == constants.TransportTypeStdio {
+		if err := utils.InitConfig(logger); err != nil {
+			logger.ErrorContext(context.Background(), "failed to initialize config", "error", err)
+			os.Exit(1)
+		}
 	}
 
 	//create server and register tools
