@@ -92,3 +92,6 @@ cdk.out
 **/.DS_Store
 .env
 env/
+
+# Git worktrees
+.worktrees/
