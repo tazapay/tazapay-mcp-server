@@ -45,6 +45,8 @@ func InitConfig(logger *slog.Logger) error {
 	authToken := base64.StdEncoding.EncodeToString([]byte(authString))
 	viper.Set("TAZAPAY_AUTH_TOKEN", authToken)
 
+	tokenManager.SetToken(authToken)
+
 	logger.InfoContext(context.Background(), "Configuration initialized")
 
 	return nil

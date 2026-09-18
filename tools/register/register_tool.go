@@ -29,6 +29,7 @@ func RegisterTools(s *server.MCPServer, logger *slog.Logger) {
 		payout.NewGetPayoutTool(logger),
 		payout.NewFundPayoutTool(logger),
 		payout.NewCreatePayoutTool(logger),
+		payout.NewConfirmPayoutTool(logger),
 		payin.NewGetPayinTool(logger),
 		payin.NewCreatePayinTool(logger),
 		payin.NewUpdatePayinTool(logger),
